@@ -1,0 +1,405 @@
+!% -~S
+!% $OMIT_UNUSED_ROUTINES=1
+!% $ZCODE_LESS_DICT_DATA=1
+!% ++include_path=..\PunyInform\lib
+
+! The very first lines of the main source code file for a game can
+! contain compiler options, like the lines above. -~S disables
+! strict error checking. This is otherwise used in z5 and z8 games by
+! default. While useful for debugging, it adds ~10 KB to the story file
+! size and it makes the game slower.
+! $OMIT_UNUSED_ROUTINES=1 makes the compiler remove all routines which
+! aren't used. This can save some space.
+! $ZCODE_LESS_DICT_DATA=1 removes an empty data byte for every dictionary word.
+
+Constant Story      "Strike Force";
+Constant Headline   "^The Hydrogen Annihilator^Part 3: Infiltration at the Arctic Circle^^";
+
+! Uncomment ONE of the two following lines, to show either time or score/turns
+! Leaving both commented out makes the library bigger.
+!Constant STATUSLINE_TIME; Statusline time;
+Constant STATUSLINE_SCORE; Statusline score;
+
+! Comment out to keep track of score
+! The value is what will be shown as the score on statusline in z3
+Constant NO_SCORE = 0;
+
+! Customize the statusline in z5+ (has no effect in z3)
+!Constant OPTIONAL_SL_NO_SCORE;
+Constant OPTIONAL_SL_NO_MOVES;
+
+! Uncomment to add optional features to PunyInform
+Constant DEBUG;
+!Constant DIALECT_US ! Affects OPTIONAL_ENGLISH_NUMBER
+!Constant CUSTOM_ABBREVIATIONS;
+!Constant CUSTOM_PLAYER_OBJECT = myPlayerObj;
+Constant OPTIONAL_NO_DARKNESS;
+!Constant OPTIONAL_FULL_DIRECTIONS;
+!Constant OPTIONAL_SHIP_DIRECTIONS;
+!Constant OPTIONAL_ALLOW_WRITTEN_NUMBERS;
+!Constant OPTIONAL_GUESS_MISSING_NOUN;
+!Constant OPTIONAL_EXTENDED_METAVERBS;
+!Constant OPTIONAL_EXTENDED_VERBSET;
+!Constant OPTIONAL_FLEXIBLE_INVENTORY;
+!Constant OPTIONAL_LANGUAGE_NUMBER;
+!Constant OPTIONAL_LIST_TOGETHER;
+!Constant OPTIONAL_PRINT_SCENERY_CONTENTS;
+!Constant OPTIONAL_SCORED;
+!Constant OPTIONAL_FULL_SCORE; ! Comment out NO_SCORE when uncommenting this
+!Constant OPTIONAL_SIMPLE_DOORS;
+!Constant OPTIONAL_MANUAL_SCOPE;
+!Constant OPTIONAL_MANUAL_REACTIVE;
+!Constant OPTIONAL_ORDERED_TIMERS;
+!Constant OPTIONAL_PROVIDE_UNDO;
+!Constant OPTIONAL_REACTIVE_PARSE_NAME;
+!Constant RUNTIME_ERRORS = 0; ! 0, 1 or 2. 0 = smallest file, 2 = most info
+
+! Define any library constants you need here, like MAX_SCORE, AMUSING_PROVIDED,
+! MAX_CARRIED, SACK_OBJECT,  etc.
+
+Constant INITIAL_LOCATION_VALUE = OutsideAirlock;
+
+Include "globals.h";
+
+! Define your attributes, common properties and global variables here, if any
+
+! Define the entry point routines you need here, like Amusing, DarkToDark etc.
+
+! Uncomment to add PunyLib extensions
+!Include "ext_menu.h";
+!Include "ext_flags.h";
+!Include "ext_talk_menu.h"; ! Note: Also include ext_flags.h to allow use of flags
+!Include "ext_quote_box.h";
+!Include "ext_cheap_scenery.h";
+
+Include "puny.h";
+
+! Uncomment to add PunyLib extensions
+!Include "ext_waittime.h";
+
+[ PressAnyKey k; print "^[Press any key to continue]"; @read_char 1 -> k; @erase_window 0; return k; ];
+
+[ PreviouslyOn;
+	print "Previously on Strike Force...^^The evil Commander Bedlam threw the weight of his HAVOC forces into an all-out assault on United Nations headquarters in New York City. In retaliation for Strike Force having repelled that attack, weapon mastermind Iron Fist lay waste to the Great Pyramids of Giza as a showcase of HAVOC's newfound power.^^Desperate to understand this terrifying weapon, Strike Force communications expert Shortwave intercepted a conversation between Iron Fist and field commander Medusa regarding a mission at San Cristobal Volcano. Strike Force intercepted, but failed to stop Medusa from obtaining the rare earth element pyritium, whose purpose is suspected to be related to HAVOC's new weapon.^^Despite that setback, intel decoded by Hexadecimal on a quantum laptop seized during the firefight gave Strike Force a new location to investigate: a deep sea research lab at the Arctic Circle. Raven leads Snowblind and Freedive on a daring 3-person stealth mission to infiltrate the research station and obtain evidence of HAVOC's intentions.^^And now, part 3 of ~The Hydrogen Annihilator!~";
+	PressAnyKey();
+];
+
+[ Introduction;
+	print "The sea at the Arctic Circle is black and still, an alien world on earth daring brave souls to explore its depths. Sitting defiantly on the seabed 1km below the surface sits a makeshift oceanic research facility, a testament to HAVOC's unmatched scientific achievements. With its domed ~head~ connected to a long corridor ~spine~ with ~ribs~ of multifunction utility modules, it looks for all the world like the skeleton of a vast, forgotten sea creature.^^From the inky distance, 3 dim violet spotlights approach the facility.";
+	PressAnyKey();
+	print "~Gotta hand it to HAVOC, they're nothing if not adaptable. Even *I've* never seen anything like this base,~ Freedive says with a whistle. ~Kinda gives me the creeps though.~^^~How about you, Snowblind? Ever see anything like this before?~ asks Raven.^^~No, I haven't,~ he pauses for a moment, ~But look there at the top of the dome structure at the fore. That's a WVCA unit for regulation of extreme temperatures,~ Snowblind replies.^^~Something to keep the facility warm?~ posits Raven.^^~Could be, but that device would be overkill, even in these cold waters. Something else, I think.~^^~Roger that,~ Raven says as the three approach the aft-side airlock. They attach their propulsion units to the facility with magnetic tethers and turn to the task of getting inside.^^~Remember our mission: get in, get evidence, and get out. Leave no trace of our having been here. HAVOC doesn't know we decrypted their laptop, so we have a slight advantage, let's not blow it. First thing's first though: get that airlock open.~";
+	PressAnyKey();
+];
+
+Object OutsideAirlock "Outside Airlock"
+with
+	description
+		"You're outside the only airlock into HAVOC's secret research lab in the Arctic Circle, some 500 fathoms below the surface of the ocean. Dim red lights and white lights illuminate the inky darkness of the Arctic depths.";
+
+Object dolphins "D.O.L.P.H.I.N. units"
+with
+	name
+		'propulsion' 'unit' 'dolphin',
+	article
+		"three",
+	found_in
+		OutsideAirlock,
+	description [;
+		if (actor == freedive) {
+			print "Aren't they beautiful? It was a real pleasure working with Spyglass to design that; ain't nobody knows the seas like him. One of my crowing achievements since joining Strike Force. Don't worry, their batteries have more than enough juice to let us hightail it out of here to the rendezvous point";
+		} else {
+			print "Affectionately known as a D.O.L.P.H.I.N. (Deep Oceanic Lifeline and Propulsive Hydro-dynamic Infiltration Navigator), this one-man propulsion unit developed by and for Strike Force, has a tempered glass bullet-dome front with motorcycle-style handles for steering and throttle. It drags the rider through the water much faster than swimming";
+			if (actor ~= player) rfalse; ".";
+		}
+	],
+has scenery;
+
+Object magnetic_tether "magnetic tether"
+with
+	name
+		'magnetic' 'tether',
+	description
+		"These magnetic tethers are the only thing keeping the D.O.L.P.H.I.N. units from being swept away by cross currents during your mission.",
+has scenery;
+
+Object airlock_door "airlock door"
+with
+	name
+		'airlock' 'door',
+	found_in
+		OutsideAirlock,
+	article
+		"an",
+	description
+		"Tightly fit into the bulkhead, the airlock door is engineered to enough precision it is hard to make out where the door ends and the hull of the facility begins. A handle sits inset in the door.",
+has scenery;
+
+Object handle "door handle"
+with
+	name
+		'rotatable' 'handle',
+	found_in
+		OutsideAirlock,
+	description
+		"An oblong handle with a grip sits inset and flush to the door's surface. It looks rotatable.",
+has scenery;
+
+Object ResearchFacility "HAVOC Research Facility"
+with
+	name
+		'secret' 'havoc' 'research' 'facility' 'lab',
+	found_in
+		OutsideAirlock,
+	description
+		"Two large oblong rectangles sit one in front of the other, which is then connected to a long tunnel that runs like the spine of a great beast to a domed ~head~.^^Branching symmetrically off from the spine are 8 barnacle-encrusted cannisters the size of 3 city buses each, forming the ~ribs~ of the HAVOC facility. It sits silently in the dark arctic waters with minimal exterior lighting, red lights on port, white on starboard, its crew having retired for the night. Your team's propulsion units float tethered to the hull.",
+has scenery;
+
+Object bulkhead "bulkhead"
+with
+	name
+		'bulkhead' 'hull',
+	article
+		"the",
+	found_in
+		OutsideAirlock,
+	description [;
+		print "Barnacle encrusted but otherwise sound, the stainless steel bulkhead of the facility sits heavily onto the silt of the ocean floor. ";
+		if (access_panel hasnt open)
+			print "One panel of metal to the left of the airlock door is of a slightly different material and color from the rest of the bulkhead.";
+		print "One panel of metal has been unscrewed from the main bulkhead and dangles, tethered to the facility by a ribbon of rainbow colored wires.";
+		if (actor ~= player) rfalse; ".";
+	],
+has scenery;
+
+Object access_panel "access panel"
+with
+	name
+		'access' 'panel',
+	article
+		"an",
+	found_in
+		OutsideAirlock,
+	description [;
+		if (self hasnt open) {
+			print "A flat square of metal with rounded corners, screwed into the surface of the facility's bulkhead with four stainless steel socket head cap screws";
+		} else {
+			print "The access panel is hanging loose from the bulkhead by a ribbon of multicolored wires, exposing a small gauge";
+		}
+		if (actor ~= player) rfalse; ".";
+	],
+has static container openable;
+
+Object multitool "Strike Force multitool"
+with
+	name
+		'tool' 'multitool',
+	description [;
+		print "A standard-issue Strike Force multitool for field operations. Can function as a (near) universal screwdriver, compass, utility knife, soldering iron, and USB drive. Functions well in all environments";
+		if (actor == freedive)
+			print " and got me out of a scrape when a sea cave collapsed on me a few months back"; 
+		if (actor == snowblind)
+			print ", even the frozen tundra of Antarctica";
+		if (actor == player)
+			print ": land, sea, and air.";
+		if (actor ~= player) rfalse; ".";
+	];
+
+Object screws "socket-headed screws"
+	with
+		name
+			'screws',
+		article
+			"four",
+		found_in
+			OutsideAirlock,
+		description [;
+			print "Four 5/16~ stainless steel screws with a hexagonal socket in the head";
+			if (actor ~= player) rfalse; ".";
+		],
+		before [;
+			Take, Turn:
+				if (parent(self) == OutsideAirlock) {
+					give access_panel open;
+					give access_panel transparent;
+					move self to actor;
+					scope_modified = true;
+					if (actor ~= player) {
+						print (the)actor, " removes ";
+					} else {
+						print "You remove ";
+					}
+					"the screws from the plate.";
+				}
+		];
+
+Object ribbon_cable "ribbon cable" access_panel
+	with
+		name
+			'ribbon' 'cable' 'wires',
+		before [;
+			Take, Remove: "The best that could be done would be to cut and/or solder the wires. Removing the cable outright would absolutely trigger an alarm and have HAVOC forces on top of you in seconds.";
+		],
+		description [;
+			print "A tidy, flat cable of 20 thin wires, each a different color. Each wire has a specialized purpose in the mechanism of the airlock door.";
+			if (actor == freedive)
+				print "^^~I see some security wires that probably trigger an alarm. Don't know much about those. But these light/dark pairs over here in pink, turquoise, orange, purple, and grey will equalize pressure for the airlock door to open. Cut one to apply that pressure differential. Remember commander, I said 'cut' which means we can only apply each wire's effects once.";
+			if (actor == snowblind)
+				print " But it's not really my wheelhouse, bypassing security locks. Sorry commander";
+			if (actor == player)
+				print "^^The red and black wires, if transposed, would open the door if the pressure were equalized first. Cutting the lime green wire would definitely disable any security alarm; its a type you've seen before. You have no idea about the other hues";
+			if (actor ~= player) rfalse; ".";
+		];
+
+!general means 'cut'
+Class Wire
+with
+	name
+		'wire',
+	found_in
+		OutsideAirlock,
+	before [;
+		Cut:
+			if (self has general) "That wire is already cut.";
+			give self general;
+			pressure_gauge.pressure = pressure_gauge.pressure + self.pressure;
+			"The ", (string)self.short_name, " is cut with precision and applies ", self.pressure, " bars of pressure to the airlock equilibrium.";
+	],
+	description [;
+		print "The ", (string)self.short_name;
+		if (actor == freedive) print " which controls ", self.pressure, " bars of pressure";
+		print " is currently ";
+		if (self has general) print "severed";
+		print "intact";
+		if (actor ~= player) rfalse; ".";
+	],
+has scenery;
+
+Wire light_pink_wire "light pink wire"
+with
+	name
+		'light' 'pink',
+	short_name
+		"light pink wire",
+	pressure
+		-5;
+
+Wire dark_pink_wire "dark pink wire"
+with
+	name
+		'dark' 'pink',
+	short_name
+		"dark pink wire",
+	pressure
+		5;
+
+! Object light_turquoise_wire "light turquoise wire";
+! Object dark_turquoise_wire  "dark turquoise wire";
+! Object light_orange_wire "light orange wire";
+! Object dark_orange_wire "dark orange wire";
+! Object light_purple_wire "light purple wire";
+! Object dark_purple_wire "dark purple wire";
+! Object light_grey_wire "light grey wire";
+! Object dark_grey_wire "dark grey wire";
+
+Object pressure_gauge "pressure gauge" access_panel
+	with
+		name
+			'pressure' 'gauge',
+		pressure
+			750,
+		description [;
+			if (actor == freedive) {
+				print "That's the airlock sea pressure guage. It currently reads ";
+				print self.pressure; 
+				print " bars, and will be sealed tighter'n an oyster on a pearl 'til it's at zero. Gotta be careful with that pressure or we risk total hull breach and this party'll be over before it even got started";
+			} else {
+				print "A small, round pressure gauge with demarcations ranging from -1000 on the left, to 0 at the top, to +1000 on the right. A small red needle currently points to ";
+				print self.pressure;
+				if (actor ~= player) rfalse; ".";
+			}
+		];
+
+Object freedive "Freedive"
+	with
+		name
+			'freedive',
+		found_in
+			OutsideAirlock,
+		life [;
+			Ask:
+				print "~";
+				second.description();
+				print_ret "~";
+			Give:
+				move noun to self;
+				scope_modified = true;
+				"Freedive accepts ", (the)noun, ".";
+		],
+		orders [;
+			Examine: 
+				print "~";
+				noun.description();
+				print_ret ",~ he says.";
+			Take:
+				<<Take noun>>;
+			Give:
+				if (parent(noun) ~= self)
+					"~Sorry, commander, I don't have that on me.~";
+				if (second has animate) {
+					move noun to second;
+					scope_modified = true;
+					"~Sure thing,~ he says, handing over ", (the)noun, ".";
+				} else {
+					"He squirrels up his face in confusion, ~Give the what to who now?~";
+				}
+		],
+has animate proper talkable;
+
+Object snowblind "Snowblind"
+	with
+		name
+			'snowblind',
+		found_in
+			OutsideAirlock,
+		life [;
+			Ask:
+				print "~";
+				second.description();
+				print_ret "~";
+			Give:
+				move noun to self;
+				scope_modified = true;
+				"Snowblind takes ", (the)noun, " into his possession with a crisp nod of affirmation.";
+		],
+		orders [;
+			Examine: 
+				print "~";
+				noun.description();
+				print_ret ",~ he says.";
+			Give:
+				if (parent(noun) ~= self)
+					"~That's not on my person, ma'am.~";
+				if (second has animate) {
+					move noun to second;
+					scope_modified = true;
+					"~Roger that, commander,~ he says as he hands ", (the)noun, " over to ", (the)second, ".";
+				} else {
+					"~Sorry ma'am, I don't follow your meaning.~";
+				}
+		],
+has animate proper talkable;
+
+[ ToolUnscrewSub;
+	if (second ~= multitool) "You use every skill in your considerable training to unscrew ", (the) noun, " with ", (the) second, " but it's just not up to the task.";
+];
+
+Extend 'turn' last
+	* noun 'with' noun -> ToolUnscrew;
+
+[Initialise;
+	location = OutsideAirlock;
+	move multitool to player;
+	scope_modified = true;
+	! PreviouslyOn();
+	! Introduction();
+];
