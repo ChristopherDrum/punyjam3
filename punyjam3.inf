@@ -50,13 +50,14 @@ Constant OPTIONAL_SIMPLE_DOORS;
 !Constant OPTIONAL_MANUAL_SCOPE;
 !Constant OPTIONAL_MANUAL_REACTIVE;
 !Constant OPTIONAL_ORDERED_TIMERS;
-!Constant OPTIONAL_PROVIDE_UNDO;
+Constant OPTIONAL_PROVIDE_UNDO;
 !Constant OPTIONAL_REACTIVE_PARSE_NAME;
 !Constant RUNTIME_ERRORS = 0; ! 0, 1 or 2. 0 = smallest file, 2 = most info
 
 ! Define any library constants you need here, like MAX_SCORE, AMUSING_PROVIDED,
 ! MAX_CARRIED, SACK_OBJECT,  etc.
 
+Constant DEATH_MENTION_UNDO;
 Constant INITIAL_LOCATION_VALUE = OutsideAirlock;
 
 Include "globals.h";
@@ -64,6 +65,11 @@ Include "globals.h";
 ! Define your attributes, common properties and global variables here, if any
 
 ! Define the entry point routines you need here, like Amusing, DarkToDark etc.
+[ DeathMessage;
+	switch (deadflag) {
+		3: print "Klaxons sound and spotlights activate; HAVOC has you in their clutches! You'll be used as bargaining chips by Major Bedlam, at best; subjects to Copperhead's bio-experiments, at worst.";
+	}
+];
 
 ! Uncomment to add PunyLib extensions
 !Include "ext_menu.h";
@@ -80,14 +86,13 @@ Include "puny.h";
 [ PressAnyKey k; print "^^[Press any key to continue]"; @read_char 1 -> k; @erase_window 0; return k; ];
 
 [ PreviouslyOn;
-	print "Previously on Strike Force...^^With Strike Force commandos distracted by a decoy attack on UN Headquarters, Commander Bedlam unleashed HAVOC's most devastating attack yet, destroying the Great Pyramids of Giza with a single blast by a devastating new weapon.^^During the battle, Shortwave intercepted a HAVOC conversation regarding a critical mission at San Cristobal Volcano. Strike Force intercepted, but failed to stop Medusa from obtaining the rare earth element pyritium.^^Intel decoded by Hexadecimal on a quantum laptop seized during the firefight gave Strike Force a hopeful new target: a deep sea research lab at the Arctic Circle. Now, Raven leads Snowdrift and Fathom on a daring stealth mission to infiltrate the station and obtain evidence of HAVOC's plans.^^And now, part 3 of ~The Hydrogen Annihilator!~";
+	print "Previously on Strike Force...^^With Strike Force commandos distracted by a decoy attack on UN Headquarters, Major Bedlam unleashed HAVOC's most devastating attack yet, destroying the Great Pyramids of Giza with a single blast by a devastating new weapon.^^Soon thereafter, Strike Force suffered another major defeat at the fires of San Cristobal Volcano, failing to stop Medusa from obtaining the rare earth element ~pyritium.~^^In a stroke of good luck, Hexadecimal managed to decode a quantum laptop seized during the firefight giving Strike Force a hopeful new target: a deep sea research laboratory at the Arctic Circle. Now, Raven leads Snowdrift and Fathom on a daring stealth mission to infiltrate the station and obtain evidence of HAVOC's plans.^^And now, part 3 of ~The Hydrogen Annihilator!~";
 	PressAnyKey();
 ];
 
 [ Introduction;
-	print "Part 3: Infiltration at the Arctic Circle^^The sea at the Arctic Circle is black and still, an alien world on earth daring brave souls to explore its depths. Sitting defiantly on the seabed one kilometer below the surface sits a sleak oceanic research facility, a testament to HAVOC's advanced technologic achievements. With its domed ~head~ connected to a long corridor ~spine~ with ~ribs~ of multifunction utility modules, it looks for all the world like the skeleton of a vast, forgotten sea creature.^^From the inky distance, 3 dim violet spotlights approach the facility.";
-	PressAnyKey();
-	print "~Gotta hand it to HAVOC, they're nothing if not adaptable. Even *I've* never seen a place like this in these extreme conditions,~ Fathom says with a whistle. ~Glad we brought our arctic expert along.~^^~How about you, Snowdrift? Ever see anything like this before?~ asks Raven.^^~No, I haven't,~ he pauses for a moment, ~But look there at the fore. That's a WVCA unit for extreme cold regulation,~ Snowdrift replies.^^~Something to keep the facility warm?~ posits Raven.^^~Could be, but that device is overkill, even in these frigid waters. Related to their research, maybe?~^^~Roger that,~ Raven says as the three approach the aft airlock. They attach their propulsion units to the facility with magnetic tethers and turn to the task of getting inside.^^~Remember our mission: get in, get evidence, and get out. Leave no trace of our having been here. HAVOC doesn't know we decrypted their laptop, so let's not blow our advantage. First thing's first though: get that airlock open.~";
+	print "The sea at the Arctic Circle is black and still, an alien world on earth daring brave souls to explore its depths. Sitting defiantly on the seabed one kilometer below the surface lies a sleak oceanic research facility, a testament to HAVOC's advanced technological achievements. With its domed ~head~ connected to a long corridor ~spine~ with ~ribs~ of multifunction utility modules, it looks for all the world like the skeleton of a vast, forgotten sea creature.^^From deep in the inky distance, three dim, violet spotlights approach the facility.^^";
+	print "~Gotta hand it to HAVOC, they're nothing if not adaptable. Even *I've* never seen a place like this in conditions this extreme,~ Fathom says with a whistle. ~Glad we brought our arctic expert along.~^^~How about you, Snowdrift? Ever see anything like this before?~ asks Raven.^^~No, I haven't,~ he pauses for a moment, ~But look there at the fore. That's a WVCA unit for extreme cold regulation,~ Snowdrift replies.^^~Something to keep the facility warm?~ posits Raven.^^~Could be, but that device is overkill, even in these frigid waters. Related to their research, maybe?~^^~Roger that,~ Raven says as the three approach the aft airlock. They attach their propulsion units to the facility with magnetic tethers and turn to the task of getting inside.^^~Remember our mission: get in, get evidence, and get out. Leave no trace of our having been here. HAVOC doesn't know we decrypted their laptop, so let's not blow this small advantage. First thing's first: let's get that airlock open.~";
 	PressAnyKey();
 ];
 
@@ -100,10 +105,49 @@ with	name
 			"From where the team sits at the aft-side airlock door, and in this darkness, that part of the facility is out of sight.",
 has scenery;
 
-Object OutsideAirlock "Outside the Airlock"
+Object EmptyRoom "Some Empty Room"
 with
 	description
-		"You're at the airlock door on the aft side of HAVOC's secret research lab in the Arctic Ocean, some 500 fathoms below. Dim red, green, and white lights subtly illuminate the inky darkness of the Arctic depths.";
+		"An empty room.",
+	s_to
+		StartRoom;
+
+Object StartRoom "Start Room"
+with
+	description
+		"The start room.",
+	n_to
+		EmptyRoom;
+
+Object OutsideAirlock "Outside the Airlock"
+with
+	initial [;
+		if (self hasnt general) {
+			give self general;
+			"You are field commander Raven. Issue orders to your operatives as ~Fathom, open the door~ or ~Snowdrift, go starboard.~ Operative field expertise will offer unique perspectives during the mission. Good luck, commander!^";
+		}
+	],
+	description
+		"You're outside the airlock door on the aft side of HAVOC's secret research lab in the Arctic Ocean, some 500 fathoms below. Dim red, green, and white lights subtly illuminate the inky darkness of the Arctic depths.",
+	n_to
+		airlock_door;
+
+Object InsideAirlock "Inside the Airlock"
+with
+	initial[;
+		if (self hasnt general) {
+			give self general;
+			move fathom to self;
+			move snowdrift to self;
+			update_moved = true;
+			give airlock_door ~open;
+			"You and the other Strikers move swiftly into the airlock and seal the door behind you. The water sluices out through the floor grating and pressure is re-established. Yellow lights flash and rotate silently, sure to draw the attention of any restless HAVOC personnel!^^Everyone holds their breath, tense and ready to make a quick escape, but your luck holds and the procedure finishes without incident. You remove your insulated suits and hang them up on some available hooks.^^~Testing, testing subvocals. Alpha beta gamma, testing subvocals,~ you experiment with your SSN (Silent Speak Network). Fathom and Snowdrift give a silent thumbs up.^^";
+		}
+	],
+	description
+		"You're in a non-descript airlock at the far aft end of the research base. Steel benches line the port-side wall, and hooks holding emergency diving suits dress the starboard side. A steel grate floor allows water to flow out to a drainage system somewhere in the deeper layers of the larger container that houses this airlock. A door to the fore has a porthole that looks out into the base.",
+	s_to
+		OutsideAirlock;
 
 Object dolphins "D.O.L.P.H.N. units"
 with
@@ -135,13 +179,44 @@ Object airlock_door "airlock door"
 with
 	name
 		'airlock' 'door',
+	door_dir
+		(n_to) (s_to),
 	found_in
-		OutsideAirlock,
+		OutsideAirlock InsideAirlock,
 	article
 		"an",
-	description
-		"Tightly fit into the bulkhead, the airlock door is engineered to enough precision it is hard to make out where the door ends and the hull of the facility begins. A titanium panel is embedded into the steel hull to the left and a fist-sized dimple in the door houses a grippable handle.",
-has scenery;
+	before [;
+		Pull, Open:
+			if (self has locked) "The handle is in the locked position.";
+			if (pressure_gauge.pressure + pressure_gauge.adjustment ~= 0)
+				"Though the door is unlocked, the pressure differential between the sea and the inner airlock is too great to open the door.";
+			if (self has open) "The airlock door is already open.";
+			give self open;
+			print "The door swings open, ";
+			if (green_wire hasnt general) {
+				deadflag = 3;
+				"triggering the alarm system!";
+			}
+			"silently and easily.";
+		SimpleUnlock:
+			"There's no lever, switch, or keyhole to make the unlocking of the airlock door so trivial. You'll need to bypass its electronic lock somehow.";
+	],
+	description [;
+		if (self has open) {
+			print "The airlock door is wide open. ";
+		} else {
+			print "Tightly fit into the bulkhead, the airlock door is engineered to enough precision to make it difficult to discern where the door ends and the hull of the facility begins. ";
+		}
+		print "A titanium panel to the left of the door is ";
+		if (control_box has open) {
+			print "floating in the water, attached to a control box by a ribbon cable";
+		} else {
+			print "embedded into the steel hull";
+		}
+		print " and a fist-sized dimple in the door houses a grippable handle";
+		if (actor ~= player) rfalse; ".";
+	],
+has scenery door openable lockable locked;
 
 Object handle "door handle"
 with
@@ -149,6 +224,19 @@ with
 		'rotatable' 'handle',
 	found_in
 		OutsideAirlock,
+	before [;
+		Turn:
+			if (red_wire.crossed == black_wire) {
+				if (airlock_door has locked) {
+					give airlock_door ~locked;
+					"The handle rotates smoothly. The airlock door should be openable now.";
+				} else {
+					give airlock_door locked;
+					"The handle turns easily, resealing the airlock door.";
+				}
+			}
+			"The handle absolutely refuses to budge.";
+	],
 	description
 		"An oblong handle with a grip sits inset and flush to the door's surface. It looks rotatable.",
 has scenery;
@@ -172,28 +260,9 @@ with
 	found_in
 		OutsideAirlock,
 	description [;
-		print "Barnacle encrusted but otherwise sound, the stainless steel bulkhead of the facility sits heavily onto the silt of the ocean floor. ";
-		if (access_panel hasnt open)
-			print "One panel of metal to the left of the airlock door is of a slightly different material and color from the rest of the bulkhead.";
-		print "One panel of metal has been unscrewed from the main bulkhead and dangles, tethered to the facility by a ribbon of rainbow colored wires.";
-		if (actor ~= player) rfalse; ".";
-	],
-has scenery;
-
-Object access_panel "access panel"
-with
-	name
-		'access' 'panel',
-	article
-		"an",
-	found_in
-		OutsideAirlock,
-	description [;
-		if (self hasnt open) {
-			print "A flat square of metal with rounded corners, screwed into the surface of the facility's bulkhead with four stainless steel socket head cap screws";
-		} else {
-			print "The access panel is hanging loose from the bulkhead by a ribbon of multicolored wires, exposing a small gauge";
-		}
+		print "Barnacle encrusted but otherwise sound, the stainless steel bulkhead of the facility sits heavily onto the silt of the ocean floor";
+		if (control_box has open)
+			print ". A small panel has been unscrewed from the main bulkhead and floats, tethered to the facility by a ribbon of rainbow-colored wires.";
 		if (actor ~= player) rfalse; ".";
 	],
 has scenery;
@@ -201,25 +270,46 @@ has scenery;
 Object control_box "electrical control box"
 with
 	name
-		'electrical' 'control' 'box' 'compartment',
+		'titanium' 'access' 'panel' 'electrical' 'control' 'box' 'compartment',
+	short_name [;
+		if (self has open) {
+			print "electrical control box";
+		} else {
+			print "access panel";
+		}
+		rtrue;
+	],
 	article
 		"an",
+	found_in
+		OutsideAirlock,
+	add_to_scope
+		screws,
+	before [;
+		Tie:
+			if (second == bulkhead) <<Screw screws multitool>>;
+			"(I know 'guess the verb and grammar' can be hard; try the form ~attach something to something using something~)";
+	],
 	description [;
-		print "A book-sized compartment in the hull of the facility, it houses a small gauge and an electrical ribbon cable.";
+		if (self hasnt open) {
+			print "A flat square of metal with rounded corners, screwed into the surface of the facility's bulkhead with four stainless steel socket-headed screws";
+		} else {
+			print "The access panel is floating loose from the bulkhead, attached to the control box by a rainbow-colored ribbon cable. Now open, it reveals a book-sized compartment in the hull of the facility, which houses a small gauge";
+		}
 		if (actor ~= player) rfalse; ".";
 	],
-has static container openable;
+has scenery container openable;
 
 Object multitool "Strike Force multitool"
 with
 	name
-		'tool' 'multitool',
+		'tool' 'multitool' 'screwdriver' 'compass' 'knife' 'utility' 'torch' 'soldering' 'lockpick' 'pick' 'data' 'storage' 'usb' 'pen' 'drive',
 	before [;
-		Drop:
-			if (noun == self) "That's one of a Strike Force team members most important tools. A Striker should keep it on their person at all times.";
+		Give, Drop:
+			if (noun == self) "That's one of a Strike Force team members most important tools; every Striker has one and should keep it on their person at all times.";
 	],
 	description [;
-		print "A standard-issue Strike Force multitool for field operations. Can function as a (near) universal screwdriver, compass, utility knife, soldering iron, lockpick, and can store 2 terabytes of data. Functions well in all environments";
+		print "A standard-issue Strike Force multitool for field operations. Can function as a (near) universal screwdriver, compass, utility knife, soldering torch, lockpick, and can store 4 terabytes of data. Functions well in all environments";
 		if (actor == fathom)
 			print " and got me out of a scrape when a sea cave collapsed on me a few months back"; 
 		if (actor == snowdrift)
@@ -232,46 +322,61 @@ with
 Object screws "socket-headed screws"
 with
 	name
-		'screws',
-	article
-		"a few",
+		'socket' 'bolt' 'bolts' 'screw' 'screws',
 	description [;
 		print "Four 5/16~ stainless steel screws with a hexagonal socket in the head";
 		if (actor ~= player) rfalse; ".";
 	],
 	before [;
 		Take, Remove, Turn:
-			if (parent(self) == OutsideAirlock) {
-				give access_panel open;
-				give access_panel transparent;
-				move self to actor;
-				scope_modified = true;
+			if (actor == player) {
+				print "You try ";
+			} else {
+				print (The)actor, " tries ";
+			}
+			"valantly to remove the screws by hand, but it's no use. Those screws are on just too tightly!";
+		Screw:
+			if (control_box hasnt open) {
+				give control_box open;
 				if (actor ~= player) {
-					print (the)actor, " removes ";
+					print (The)actor, " loosens ";
 				} else {
-					print "You remove ";
+					print "You loosen ";
 				}
-				"the screws from the plate, revealing a control box. The plate floats attached to the box by a ribbon cable.";
+				"the captive screws with the multitool and the plate comes away from the hull, revealing a control box. The plate floats attached to the box by a ribbon cable.";
+			} else {
+				give control_box ~open;
+				if (actor ~= player) {
+					print (The)actor, " tightens ";
+				} else {
+					print "You tighten ";
+				}
+				"the captive screws, firmly reattaching the access plate to the control box, leaving no visible sign of any tampering.";
 			}
 	],
 has scenery;
 
-Object ribbon_cable "ribbon cable" control_box
+Object ribbon_cable "ribbon cable"
 with
 	name
 		'ribbon' 'cable' 'wires',
+	found_in
+		control_box,
 	before [;
-		Take, Remove: "The best that could be done would be to cut and/or solder the wires. Removing the cable outright would absolutely trigger an alarm and have HAVOC forces on top of you in seconds.";
+		Take, Remove: "Removing the cable outright would likely trigger a systems failure alarm. HAVOC forces would swarm you in seconds.";
 	],
 	description [w;
 		print "A tidy, flat cable of 13 thin wires each a different color and each with a specialized purpose in controlling the airlock door.";
-		if (actor == fathom)
-			print "^^~I see wires that maybe trigger an alarm? Don't know much about those. The light/dark pairs over here in pink, turquoise, and so on regulate airlock pressure to allow the door to open. Cutting one would apply its pressure differential as measured by the attached gauge. And by 'cut' I do mean each wire's effects can only be applied once.^^~";
-		if (actor == snowdrift)
-			print " But it's not really my wheelhouse, hotwiring security locks. Sorry commander.^^~";
-		if (actor == player)
-			print "^^You know from experience that when crossed, the red and black wires would unlock the door. Cutting the green wire would disable the security alarm; its a type you've seen before. You have no idea about the other-hued wires.^^";
-		print "The current state of the wires:";
+
+		if (actor == snowdrift) {
+			print " But I don't recognize anything related to my field of expertise. Sorry commander";
+		} else {
+			if (actor == fathom)
+				print "^^~I see wires that maybe trigger an alarm? Don't know much about those. The light/dark pairs over here in pink, turquoise, and so on regulate airlock pressure to allow the door to open. Cutting one would apply its pressure differential as measured by the attached gauge. And by 'cut' I do mean each wire's effects can only be applied once.^^~";
+
+			if (actor == player)
+				print "^^You know from experience that when crossed, the red and black wires would unlock the door. Cutting the green wire would disable the security alarm; its a type you've seen before. You have no idea about the other-hued wires.^^";
+			print "The current state of the wires:";
 			objectloop (w ofclass Wire) {
 				print "^    ", (string)w.short_name;
 				if (actor == fathom){
@@ -296,16 +401,16 @@ with
 					print "intact";
 				}
 			}
+		}
 		if (actor ~= player) rfalse; "";
-	];
+	],
+has static concealed;
 
 !general means 'cut'
 Class Wire
 with
 	name
 		'wire',
-	found_in
-		control_box,
 	article
 		"the",
 	pressure !default to 0, where 0 means neutral
@@ -315,10 +420,10 @@ with
 	before [;
 		Cut:
 			if (actor == snowdrift)
-				"Snowdive doesn't have the necessary expertise on these wires that you and Fathom have.";
+				"Snowdrift doesn't have the necessary expertise on these wires that you and Fathom have.";
 			if (actor == fathom && 
 				self.pressure == 0)
-				"~I should leave security-related elements in your capable hands, commander.~";
+				"~That's probably security-related. I should leave things like that in your capable hands, commander.~";
 			if (actor == player && 
 				self.pressure ~= 0)
 				"Airlock-related wires should be entrusted to that field expert.";
@@ -329,7 +434,7 @@ with
 				self.crossed = nothing;
 			}
 			give self general;
-			print "With the delicate care that comes from the world-class operative training, ", (the)self, " is snipped cleanly.";
+			print "With the delicate care that comes from world-class operative training, ", (the)self, " wire is snipped cleanly.";
 			CalculatePressure();
 			"";
 	],
@@ -350,64 +455,64 @@ with
 	],
 has scenery;
 
-Wire red_wire "red wire"
+Wire red_wire "red wire" control_box
 with	name 'red',
 		short_name "red";
 
-Wire black_wire "black wire"
+Wire black_wire "black wire" control_box
 with	name 'black',
 		short_name "black";
 
-Wire green_wire "green wire"
+Wire green_wire "green wire" control_box
 with	name 'green',
 		short_name "green";
 
-Wire light_pink_wire "light pink wire"
+Wire light_pink_wire "light pink wire" control_box
 with	name 'light' 'pink',
 		short_name "light pink",
 		pressure -5;
 
-Wire dark_pink_wire "dark pink wire"
+Wire dark_pink_wire "dark pink wire" control_box
 with	name 'dark' 'pink',
 		short_name "dark pink",
 		pressure 5;
 
-Wire light_turquoise_wire "light turquoise wire"
+Wire light_turquoise_wire "light turquoise wire" control_box
 with	name 'light' 'turquoise',
 		short_name "light turquoise",
 		pressure -10;
 
-Wire dark_turquoise_wire  "dark turquoise wire"
+Wire dark_turquoise_wire  "dark turquoise wire" control_box
 with	name 'dark' 'turquoise',
 		short_name "dark turquoise",
 		pressure 10;
 
-Wire light_orange_wire "light orange wire"
+Wire light_orange_wire "light orange wire" control_box
 with	name 'light' 'orange',
 		short_name "light orange",
 		pressure -30;
 
-Wire dark_orange_wire "dark orange wire"
+Wire dark_orange_wire "dark orange wire" control_box
 with	name 'dark' 'orange',
 		short_name "dark orange",
 		pressure 30;
 
-Wire light_purple_wire "light purple wire"
+Wire light_purple_wire "light purple wire" control_box
 with	name 'light' 'purple',
 		short_name "light purple",
 		pressure -50;
 
-Wire dark_purple_wire "dark purple wire"
+Wire dark_purple_wire "dark purple wire" control_box
 with	name 'dark' 'purple',
 		short_name "dark purple",
 		pressure 50;
 
-Wire light_grey_wire "light grey wire"
+Wire light_grey_wire "light grey wire" control_box
 with	name 'light' 'grey',
 		short_name "light grey",
 		pressure -100;
 
-Wire dark_grey_wire "dark grey wire"
+Wire dark_grey_wire "dark grey wire" control_box
 with	name 'dark' 'grey',
 		short_name "dark grey",
 		pressure 100;
@@ -430,7 +535,7 @@ with	name 'dark' 'grey',
 	}
 	pressure_gauge.adjustment = new_adj;
 	if (safe) {
-		if (pressure_gauge.danger == false) {
+		if (pressure_gauge.danger == true) {
 			print " The needle settles down into a steady reading again.";
 		} else {
 			if (old_adj ~= new_adj) {
@@ -443,7 +548,7 @@ with	name 'dark' 'grey',
 	}
 ];
 
-Object pressure_gauge "pressure gauge" control_box
+Object pressure_gauge "pressure gauge"
 	with
 		name
 			'pressure' 'gauge',
@@ -453,6 +558,8 @@ Object pressure_gauge "pressure gauge" control_box
 			0,
 		danger
 			false,
+		found_in
+			control_box,
 		description [;
 			if (actor == fathom) {
 				if (self.danger) {
@@ -463,7 +570,7 @@ Object pressure_gauge "pressure gauge" control_box
 					if (self.pressure + self.adjustment == 0) {
 						print "The pressure is equalized, so we're safe to use the door now, as long as the lock and security have been bypassed, ma'am";
 					} else {
-						print "It'll be sealed tighter'n a oyster on a pearl 'til it's at zero. Gotta be careful with that pressure or we risk hull breach and this party'll be over before it even got started";
+						print "The airlock door'll be sealed tighter'n a oyster on a pearl 'til it's at zero. Gotta be careful with that pressure or we risk hull breach and this party'll be over before it even got started";
 					}
 				}
 			} else {
@@ -478,15 +585,15 @@ Object pressure_gauge "pressure gauge" control_box
 				}
 				if (actor ~= player) rfalse; ".";
 			}
-		];
+		],
+has static concealed;
 
 Class Striker
-with 
-	found_in OutsideAirlock,
-	add_to_scope multitool,
-has animate proper talkable;
+with 	add_to_scope 
+			multitool,
+has proper;
 
-Object raven "(self object)" class Striker
+Striker raven "(self object)"
 with	name
 			'self' 'me' 'myself' 'raven' 'commander',
 		short_name
@@ -497,11 +604,11 @@ with	name
 				print "Black belt in various forms of martial arts and a fine jazz saxophonist, if I do say so myself";
 			} else {
 				if (actor == snowdrift) print "Without the commander's good word, I wouldn't have been made a Striker. I owe her my career and trust her with my life";
-				if (actor == fathom) print "The commander has saved my hide more than once, and I even saw her defeat Shuriken in hand-to-hand combat training once. ONLY once, but still I'd never seen anyone defeat him ever before or since";
+				if (actor == fathom) print "The commander has saved my hide more than once, and I even saw her defeat Shuriken in hand-to-hand combat training once. ONLY once, but still I'd never seen anyone defeat him before or since";
 			}
 			if (actor ~= player) rfalse; ".";
 		],
-has concealed transparent;
+has female concealed;
 
 Striker fathom "Fathom"
 with
@@ -530,6 +637,10 @@ with
 	orders [;
 		Take:
 			<<Take noun>>;
+		Look:
+			print "~";
+			location.description();
+			print_ret ",~ he says.";
 		Examine: 
 			print "~";
 			noun.description();
@@ -538,6 +649,9 @@ with
 			if (parent(noun) ~= self)
 				"~Sorry, commander, I don't have that on me.~";
 			if (second has animate) {
+				if (noun == multitool) {
+					print_ret (The)self, " and ", (the)second, " confer with one another. ~He remembered to bring his along. We're good to go, commander.~";
+				}
 				move noun to second;
 				scope_modified = true;
 				"~Sure thing,~ he says, handing over ", (the)noun, ".";
@@ -546,20 +660,25 @@ with
 			}
 		Cut:
 			<<Cut noun>>;
+		Solder:
+			<<Solder noun second>>;
 		default:
 			"~That's probably better off being entrusted to your or Snowdrift's skills, commander.~";
-	];
+	],
+has animate talkable;
 
 Striker snowdrift "Snowdrift"
 	with
 		name
 			'snowdrift',
+		add_to_scope 
+			multitool,
 		description [;
 			print "Strike Force's Arctic specialist, expert on all things ice and snow. ";
 			if (actor == self) {
 				print "Might sound strange, but in my freetime I enjoy getting away on a quiet beach and am an avid reader. I Joined Strike Force 3 years ago; anniversary is actually this Friday";
 			} else if (actor == fathom) {
-				print "It's kind of rare to combine our fields of expertise, like on this mission. We've worked together about three years now.";
+				print "It's kind of rare to combine our fields of expertise, like on this mission. We've worked together about three years now";
 			} else {
 				print "You personally recommended he be allowed to join Strike Force seeing in him the intrepid spirit that drives all Strikers in the fight against HAVOC";
 			}
@@ -576,6 +695,8 @@ Striker snowdrift "Snowdrift"
 		orders [;
 			Take:
 				<<Take noun>>;
+			Look:
+				<<Look>>;
 			Examine: 
 				print "~";
 				noun.description();
@@ -584,7 +705,10 @@ Striker snowdrift "Snowdrift"
 				if (parent(noun) ~= self)
 					"~That's not on my person, ma'am.~";
 				if (second has animate) {
-					move noun to second;
+					if (noun == multitool) {
+						print_ret (The)self, " checks with ", (the)second, ". ~Looks like he has his own already, as you'd requested back at base, commander.~";
+					}
+				move noun to second;
 					scope_modified = true;
 					"~Roger that, commander,~ he says as he hands ", (the)noun, " over to ", (the)second, ".";
 				} else {
@@ -593,21 +717,52 @@ Striker snowdrift "Snowdrift"
 			Cut:
 				<<Cut noun>>;
 			default:
-				"~Having *me* do that may endanger the mission, commander. You or Fathom are likely better suited to the task.~";
-		];
+				"~Having *me* do that may endanger the mission, commander. You or Fathom are better suited to the task.~";
+		],
+has animate talkable;
 
-[ ToolUnscrewSub;
-	if (second ~= multitool) "You use every skill in your considerable training to unscrew ", (the) noun, " with ", (the) second, " but it's just not up to the task.";
+[ SimpleUnlockSub;
+	"HAVOC has been known to make very dumb mistakes before, but in general their security is tight enough to prevent such simple unlocking to work.";
 ];
 
-Extend 'turn' last
-	* noun 'with' noun -> ToolUnscrew;
+Extend 'unlock'
+	* noun -> SimpleUnlock;
 
-[ ConnectSub; 
-	if (parent(multitool) ~= actor)
+[ ScrewSub;
+	if (second ~= multitool) {
+		if (actor == player) {
+			print "You use every skill in your considerable training to ";
+		} else {
+			print (the)actor, " tries valiantly to ";
+		}
+		"to manipulate ", (the) noun, " with ", (the) second, " but it's just not possible without the assistance of a tool.";
+	}
+];
+
+Extend 'turn'
+	* noun 'with'/'using' noun -> Screw;
+Extend 'remove' last
+	* noun 'with'/'using' noun -> Screw;
+Verb 'replace' 'loosen' 'tighten'
+	* noun 'with'/'using' noun -> Screw;
+
+[ AttachSub;
+	if (noun ofclass Wire && second ofclass Wire) {
+		<<Solder noun second>>;
+	}
+	"There's no clear way to attach ", (the)noun, " to ", (the)second, ".";
+];
+
+Verb 'connect' = 'attach';
+Verb 'reattach' = 'attach';
+Extend 'attach' last
+	* noun 'to' noun 'with'/'using'/'by' 'tool'/'soldering'/'multitool'/'the multitool' -> Attach;
+
+[ SolderSub; 
+	if (TestScope(multitool, actor) == false)
 		"That's not going to be possible without a multitool handy. It's standard-issue Striker equipment for a reason!";
 	if (~~(noun ofclass Wire) || ~~(second ofclass Wire))
-		"The soldering component of the multitool is only strong enough for reconnecting wires.";
+		"The soldering component of the multitool is really only strong enough for light tasks, like reconnecting wires.";
 	if ((noun hasnt general) || (second hasnt general))
 		"Only cut wires can be soldered together.";
 	if (noun == second) {
@@ -629,9 +784,25 @@ Extend 'turn' last
 	"UNEXPECTED: Some edge case fell through to here!";
 ];
 
-Verb 'connect' 'solder' 'fuse'
-	* noun 'to'/'and'/'with' noun -> Connect;
+Verb 'solder' 'fuse'
+	* noun 'to'/'and'/'with' noun -> Solder;
 
+[ DirectionPromptSub;
+	"Something at the base is causing your compass to behave erratically. You'll need to use nautical terms while on this mission: fore, aft, port, and starboard.";
+];
+
+Verb 'n' 'north' 's' 'south' 'e' 'east' 'w' 'west' 'nw' 'northwest' 'ne' 'northeast' 'sw' 'southwest' 'se' 'southeast'
+	* -> DirectionPrompt;
+
+[ UseExplainSub;
+	"Being a member of the elite Strike Force, precision of words is as important as precision of actions. (try to come up with a more specific verb to apply to the situation)";
+];
+
+Verb 'use' 'utilize'
+	* noun -> UseExplain
+	* noun 'on'/'with' noun -> UseExplain;
+
+Verb 'describe' = 'examine';
 ! [ SitRepSub;
 ! 	print "says, ~I'm in ", (name)parent(noun), ", commander.~^";
 ! ];
@@ -650,10 +821,12 @@ Verb 'connect' 'solder' 'fuse'
 [Initialise;
 	ship_directions_enabled = true;
 	normal_directions_enabled = false;
-	location = OutsideAirlock;
+
 	move multitool to player;
-	scope_modified = true;
-	give player ~talkable;
+	move fathom to location;
+	move snowdrift to location;
+	update_moved = true;
+	
 	! PreviouslyOn();
 	! Introduction();
 ];
