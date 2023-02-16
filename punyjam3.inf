@@ -58,11 +58,24 @@ Constant OPTIONAL_PROVIDE_UNDO;
 ! MAX_CARRIED, SACK_OBJECT,  etc.
 
 Constant DEATH_MENTION_UNDO;
-Constant INITIAL_LOCATION_VALUE = OutsideAirlock;
+Constant INITIAL_LOCATION_VALUE = Airlock;
 
 Include "globals.h";
 
 ! Define your attributes, common properties and global variables here, if any
+Attribute shared;
+Constant MSG_ASK_DEFAULT 	1000;
+Constant MSG_ANSWER_DEFAULT 1001;
+
+[LibraryMessages p_msg p_arg_1 p_arg_2;
+	p_arg_1 = p_arg_2;
+	switch(p_msg) {
+		MSG_ASK_DEFAULT:
+			"~Sorry commander, SCN cut out for a moment. Couldn't make that out,~ he says. You hear him tapping his earpiece.";
+		MSG_ANSWER_DEFAULT:
+			"~Getting static here, commander. Be advised.~";
+	}
+];
 
 ! Define the entry point routines you need here, like Amusing, DarkToDark etc.
 [ DeathMessage;
@@ -86,13 +99,15 @@ Include "puny.h";
 [ PressAnyKey k; print "^^[Press any key to continue]"; @read_char 1 -> k; @erase_window 0; return k; ];
 
 [ PreviouslyOn;
-	print "Previously on Strike Force...^^With Strike Force commandos distracted by a decoy attack on UN Headquarters, Major Bedlam unleashed HAVOC's most devastating attack yet, destroying the Great Pyramids of Giza with a single blast by a devastating new weapon.^^Soon thereafter, Strike Force suffered another major defeat at the fires of San Cristobal Volcano, failing to stop Medusa from obtaining the rare earth element ~pyritium.~^^In a stroke of good luck, Hexadecimal managed to decode a quantum laptop seized during the firefight giving Strike Force a hopeful new target: a deep sea research laboratory at the Arctic Circle. Now, Raven leads Snowdrift and Fathom on a daring stealth mission to infiltrate the station and obtain evidence of HAVOC's plans.^^And now, part 3 of ~The Hydrogen Annihilator!~";
+	print "Previously on Strike Force...^^With Strike Force commandos distracted by a decoy attack on UN Headquarters, Major Bedlam unleashed HAVOC's most devastating attack yet, destroying the Great Pyramids of Giza with a single blast by a devastating new weapon.^^Soon thereafter, Strike Force suffered another major defeat at the fires of San Cristobal Volcano, failing to stop Medusa from obtaining the rare earth element ~pyritium.~^^In a stroke of good luck, Hexadecimal managed to decode a quantum laptop seized during the firefight giving Strike Force a hopeful new target: a deep sea research laboratory at the Arctic Circle. Now, Raven leads Snowdrift and Fathom on a daring stealth mission to infiltrate the station and obtain evidence of HAVOC's plans.
+	^^You are field commander Raven, in direct control of your team. Keep in mind, each operative's field expertise can and will offer a unique perspective on mission objectives. Some tasks may only be performed by a team member with the right experience!^^~sitrep~ for team location/inventory rundown.^~help~ to see relevant information again.^Good luck, commander!
+	^^And now, part 3 of ~The Hydrogen Annihilator!~";
 	PressAnyKey();
 ];
 
 [ Introduction;
 	print "The sea at the Arctic Circle is black and still, an alien world on earth daring brave souls to explore its depths. Sitting defiantly on the seabed one kilometer below the surface lies a sleak oceanic research facility, a testament to HAVOC's advanced technological achievements. With its domed ~head~ connected to a long corridor ~spine~ with ~ribs~ of multifunction utility modules, it looks for all the world like the skeleton of a vast, forgotten sea creature.^^From deep in the inky distance, three dim, violet spotlights approach the facility.^^";
-	print "~Gotta hand it to HAVOC, they're nothing if not adaptable. Even *I've* never seen a place like this in conditions this extreme,~ Fathom says with a whistle. ~Glad we brought our arctic expert along.~^^~How about you, Snowdrift? Ever see anything like this before?~ asks Raven.^^~No, I haven't,~ he pauses for a moment, ~But look there at the fore. That's a WVCA unit for extreme cold regulation,~ Snowdrift replies.^^~Something to keep the facility warm?~ posits Raven.^^~Could be, but that device is overkill, even in these frigid waters. Related to their research, maybe?~^^~Roger that,~ Raven says as the three approach the aft airlock. They attach their propulsion units to the facility with magnetic tethers and turn to the task of getting inside.^^~Remember our mission: get in, get evidence, and get out. Leave no trace of our having been here. HAVOC doesn't know we decrypted their laptop, so let's not blow this small advantage. First thing's first: let's get that airlock open.~";
+	print "~Gotta hand it to HAVOC, they're nothing if not adaptable. Even *I've* never seen a place like this in conditions this extreme,~ Fathom says with a whistle.^^~How about you, Snowdrift? Ever see anything like this before?~ you ask.^^~No, I haven't,~ he says, scanning the lab. ~But look there at the fore. That's a WVCA unit for extreme cold regulation.~^^~Something to keep the facility warm?~^^~Could be, but that device is overkill, even in these frigid waters. Related to their research, I'd suspect.~^^~Roger that,~ you acknowledge as you approach the aft airlock. You dismount your propulsion units and attach them to the facility via magnetic tethers.^^You address the team, ~Remember our mission: get in, get evidence, get out. Leave no trace of having been here. HAVOC doesn't know we decrypted their laptop, so let's not blow our advantage. First thing's first: we need to get that airlock open.~";
 	PressAnyKey();
 ];
 
@@ -100,7 +115,7 @@ Object various "(facility various)"
 with	name
 			'wvca' 'unit' 'dome',
 		found_in
-			OutsideAirlock,
+			Ocean,
 		description
 			"From where the team sits at the aft-side airlock door, and in this darkness, that part of the facility is out of sight.",
 has scenery;
@@ -119,20 +134,16 @@ with
 	n_to
 		EmptyRoom;
 
-Object OutsideAirlock "Outside the Airlock"
+Object Ocean "Ocean, Outside the Airlock"
 with
-	initial [;
-		if (self hasnt general) {
-			give self general;
-			"You are field commander Raven. Issue orders to your operatives as ~Fathom, open the door~ or ~Snowdrift, go starboard.~ Operative field expertise will offer unique perspectives during the mission. Good luck, commander!^";
-		}
+	description [;
+		print "Outside the airlock door on the aft side of HAVOC's secret research lab in the Arctic Ocean, some 500 fathoms below. Red, green, and white navigation lights twinkle in the inky darkness of the Arctic depths.";
+		if (actor ~= player) rfalse; ".";
 	],
-	description
-		"You're outside the airlock door on the aft side of HAVOC's secret research lab in the Arctic Ocean, some 500 fathoms below. Dim red, green, and white lights subtly illuminate the inky darkness of the Arctic depths.",
 	n_to
-		airlock_door;
+		outer_airlock_door;
 
-Object InsideAirlock "Inside the Airlock"
+Object Airlock "Airlock"
 with
 	initial[;
 		if (self hasnt general) {
@@ -140,14 +151,83 @@ with
 			move fathom to self;
 			move snowdrift to self;
 			update_moved = true;
-			give airlock_door ~open;
-			"You and the other Strikers move swiftly into the airlock and seal the door behind you. The water sluices out through the floor grating and pressure is re-established. Yellow lights flash and rotate silently, sure to draw the attention of any restless HAVOC personnel!^^Everyone holds their breath, tense and ready to make a quick escape, but your luck holds and the procedure finishes without incident. You remove your insulated suits and hang them up on some available hooks.^^~Testing, testing subvocals. Alpha beta gamma, testing subvocals,~ you experiment with your SSN (Silent Speak Network). Fathom and Snowdrift give a silent thumbs up.^^";
+			give outer_airlock_door ~open;
+			"The team moves swiftly into the airlock, sealing the door behind. Yellow lights immediately begin to flash silently as the water drains and chamber pressure is re-established, sure to draw the attention of any sleepless HAVOC personnel!^^Fathom balls up a fist and hovers it over an emergency release button. Everyone tenses up, ready for a quick escape, but luck holds and the procedure finishes without incident. You remove your pressure suits, stash them on available hooks, and set your helmets on the bench.^^~Testing, alpha beta gamma, testing,~ you check the Subvocal Communication Network. Fathom and Snowdrift confirm with a thumbs up.^^
+			~Outside of this airlock don't bunch up; only one Striker in any given area at any time. I'll take point and scout ahead. Be ready to act on my orders,~you say.^^In quiet unison the three of you chant, ~Strike hard, strike fast. Strike Force!~^^";
 		}
 	],
-	description
-		"You're in a non-descript airlock at the far aft end of the research base. Steel benches line the port-side wall, and hooks holding emergency diving suits dress the starboard side. A steel grate floor allows water to flow out to a drainage system somewhere in the deeper layers of the larger container that houses this airlock. A door to the fore has a porthole that looks out into the base.",
+	description [;
+		print "The far-aft airlock of HAVOC's research base. Enameled steel benches in battle grey line the portside wall. Hooks with diving suits dress the starboard wall. The inner airlock door leading fore has a porthole which looks out into the base. The outer airlock door is aft";
+		if (actor ~= player) rfalse; ".";
+	],
 	s_to
-		OutsideAirlock;
+		outer_airlock_door,
+	n_to
+		inner_airlock_door;
+
+Object Receiving
+with
+	short_name
+		"Receiving Area",
+	description [;
+		print "This area seems to be used to stage goods and supplies as they're brought in from the airlock; nothing is currently staged. To port is an open pantry, to starboard is the galley, and fore leads through a short connecting passageway into the next module of the station";
+		if (actor ~= player) rfalse; ".";
+	],
+	s_to
+		inner_airlock_door,
+	w_to
+		Pantry,
+	e_to
+		Galley,
+	n_to
+		MessHall;
+
+Object Pantry "Pantry"
+with
+	description [;
+		print "Tidy shelves hold boxes, cans, sacks, and plastic containers of food. Every item is wrapped in a plain, generic, deep blue label with bold, white Helvetica letters.";
+		if (actor ~= player) rfalse; ".";
+	],
+	e_to
+		Receiving;
+
+Object foodstuffs "various food stuffs" Pantry
+with
+	name
+		'food' 'box' 'boxes' 'can' 'cans' 'sack' 'sacks' 'plastic' 'container' 'item' 'deep' 'blue' 'label' 'rigatoni',
+	description [;
+		print "There's a wide variety of food stuffs. A sample box is completely covered in a solid, deep blue with bold, white Helvetica reading ~RIGATONI~. Smaller text gives the total volume and ration size. On the backside in bright yellow is a tastefully small HAVOC logo";
+		if (actor ~= player) rfalse; ".";
+	],
+has scenery;
+
+Object logo "HAVOC logo" Pantry
+with
+	name
+		'logo',
+	description [;
+		print "Makes one's skin crawl at what, and who, it represents";
+		if (actor ~= player) rfalse; ".";
+	],
+has scenery;
+
+Object Galley "Galley"
+with
+	description [;
+		print "A spotless, compact kitchen in stainless steel with the expected assortment of appliances and utensils. A stand mixer, microwave, and food processor sit on a counter that abuts a walk-in refrigerator along the aft wall. A chef's island holds a spacious wooden cutting board on its steel countertop. A magnetic knife rack with an assortment of blades is mounted above more stainless countertops along the starboard wall. A dishwasher and deep sink are fitted in the aft-starboard corner";
+		if (actor ~= player) rfalse; ".";
+	],
+	w_to
+		Receiving;
+
+Object MessHall "Mess Hall"
+with
+	description[;
+		print "This usage of this facility module is split with the starboard third dedicated to the mess hall and the remainder to recreation. The mess hall portion is barebones long tables with utility charis. The recreational area holds couches, chairs, a television, and other leisure items. Judging from dining arrangement, there's 20 or 30 personnel stationed here";
+		if (actor ~= player) rfalse; ".";
+	],
+	s_to
+		Receiving;
 
 Object dolphins "D.O.L.P.H.N. units"
 with
@@ -156,10 +236,10 @@ with
 	article
 		"your team's",
 	found_in
-		OutsideAirlock,
+		Ocean,
 	description [;
 		if (actor == fathom) {
-			print "Aren't they beautiful? It was a real pleasure working with Tidalwave to design that; ain't nobody knows the seas like him. One of my crowing achievements since joining Strike Force. Don't worry, their batteries have more than enough juice to let us hightail it out of here to the rendezvous point";
+			print "Aren't they beautiful? It was a real pleasure working with Tidalwave to design that; ain't nobody knows the seas like him. One of my crowing achievements since joining Strike Force. Don't worry, their batteries have more than enough juice to get us to the rendezvous point";
 		} else {
 			print "Affectionately known as a 'dolphin' (D.O.L.P.H.N. : Deep Oceanic Lifeline and Propulsive Hydro-Navigator), this one-man propulsion unit developed by and for Strike Force, has a tempered glass bullet-dome front with motorcycle-style handles for steering and throttle. It drags the rider through the water much faster than swimming";
 			if (actor ~= player) rfalse; ".";
@@ -171,20 +251,22 @@ Object magnetic_tether "magnetic tether"
 with
 	name
 		'magnetic' 'tether',
-	description
-		"These magnetic tethers are the only thing keeping the D.O.L.P.H.N. units from being swept away by cross currents during your mission.",
+	description [;
+		print "These magnetic tethers are the only thing keeping the D.O.L.P.H.N. units from being swept away by cross currents during the mission";
+		if (actor ~= player) rfalse; ".";
+	],
 has scenery;
 
-Object airlock_door "airlock door"
+Object outer_airlock_door "outer airlock door"
 with
 	name
-		'airlock' 'door',
+		'outer' 'airlock' 'door',
 	door_dir
 		(n_to) (s_to),
 	found_in
-		OutsideAirlock InsideAirlock,
+		Ocean Airlock,
 	article
-		"an",
+		"the",
 	before [;
 		Pull, Open:
 			if (self has locked) "The handle is in the locked position.";
@@ -218,27 +300,49 @@ with
 	],
 has scenery door openable lockable locked;
 
+Object inner_airlock_door "inner airlock door"
+with
+	name
+		'inner' 'airlock' 'door',
+	door_dir
+		(n_to) (s_to),
+	found_in
+		Airlock Receiving,
+	article
+		"the",
+	description [;
+		if (self has open) {
+			print "The inner airlock door is wide open";
+		} else {
+			print "A bog-standard airlock door with a rotatable handle to unseal and open it into the main facility";
+		}
+		if (actor ~= player) rfalse; ".";
+	],
+has scenery door openable lockable;
+
 Object handle "door handle"
 with
 	name
 		'rotatable' 'handle',
 	found_in
-		OutsideAirlock,
+		Ocean,
 	before [;
 		Turn:
 			if (red_wire.crossed == black_wire) {
-				if (airlock_door has locked) {
-					give airlock_door ~locked;
+				if (outer_airlock_door has locked) {
+					give outer_airlock_door ~locked;
 					"The handle rotates smoothly. The airlock door should be openable now.";
 				} else {
-					give airlock_door locked;
+					give outer_airlock_door locked;
 					"The handle turns easily, resealing the airlock door.";
 				}
 			}
 			"The handle absolutely refuses to budge.";
 	],
-	description
-		"An oblong handle with a grip sits inset and flush to the door's surface. It looks rotatable.",
+	description[;
+		print "An oblong handle with a grip sits inset and flush to the door's surface. It looks rotatable";
+		if (actor ~= player) rfalse; ".";
+	],
 has scenery;
 
 Object ResearchFacility "HAVOC Research Facility"
@@ -246,9 +350,11 @@ with
 	name
 		'secret' 'havoc' 'research' 'facility' 'lab',
 	found_in
-		OutsideAirlock,
-	description
-		"Two large oblong rectangles sit one in front of the other, which is then connected to a long tunnel that runs like the spine of a great beast to a domed ~head~.^^Branching symmetrically off from the ~spine~ are 8 barnacle-encrusted cannisters each the size of a shipping container, forming the ~ribs~ of the HAVOC facility. It sits silently in the dark arctic waters with minimal red and green running lights, and a lone white light above the aft airlock. Your team's propulsion units float tethered to the hull.",
+		Ocean,
+	description [;
+		print "Two large oblong rectangles sit one in front of the other, which is then connected to a long tunnel that runs like the spine of a great beast to a domed ~head~.^^Branching symmetrically off from the ~spine~ are 8 barnacle-encrusted cannisters each the size of a shipping container, forming the ~ribs~ of the HAVOC facility. It sits silently in the dark arctic waters with minimal red and green running lights, and a lone white light above the aft airlock. The team's propulsion units float tethered to the hull.";
+		if (actor ~= player) rfalse; ".";
+	],
 has scenery;
 
 Object bulkhead "bulkhead"
@@ -258,7 +364,7 @@ with
 	article
 		"the",
 	found_in
-		OutsideAirlock,
+		Ocean,
 	description [;
 		print "Barnacle encrusted but otherwise sound, the stainless steel bulkhead of the facility sits heavily onto the silt of the ocean floor";
 		if (control_box has open)
@@ -282,7 +388,7 @@ with
 	article
 		"an",
 	found_in
-		OutsideAirlock,
+		Ocean,
 	add_to_scope
 		screws,
 	before [;
@@ -317,7 +423,8 @@ with
 		if (actor == player)
 			print ": land, sea, and air";
 		if (actor ~= player) rfalse; ".";
-	];
+	],
+has shared;
 
 Object screws "socket-headed screws"
 with
@@ -334,7 +441,7 @@ with
 			} else {
 				print (The)actor, " tries ";
 			}
-			"valantly to remove the screws by hand, but it's no use. Those screws are on just too tightly!";
+			"valiantly to remove the screws by hand, but it's no use. Those screws are on just too tightly!";
 		Screw:
 			if (control_box hasnt open) {
 				give control_box open;
@@ -366,7 +473,7 @@ with
 		Take, Remove: "Removing the cable outright would likely trigger a systems failure alarm. HAVOC forces would swarm you in seconds.";
 	],
 	description [w;
-		print "A tidy, flat cable of 13 thin wires each a different color and each with a specialized purpose in controlling the airlock door.";
+		print "A tidy, flat cable of 13 thick wires each a different color and each with a specialized purpose in controlling the airlock door.";
 
 		if (actor == snowdrift) {
 			print " But I don't recognize anything related to my field of expertise. Sorry commander";
@@ -568,9 +675,9 @@ Object pressure_gauge "pressure gauge"
 					print "That's the airlock sea pressure guage; looks like this vessel is rated for much deeper waters. It currently reads ";
 					print (self.pressure + self.adjustment), " bars. ";
 					if (self.pressure + self.adjustment == 0) {
-						print "The pressure is equalized, so we're safe to use the door now, as long as the lock and security have been bypassed, ma'am";
+						print "The pressure is equalized, so we're safe to use the door now, as long as the lock and security have been bypassed, commander";
 					} else {
-						print "The airlock door'll be sealed tighter'n a oyster on a pearl 'til it's at zero. Gotta be careful with that pressure or we risk hull breach and this party'll be over before it even got started";
+						print "The airlock door'll be sealed tighter'n a oyster on a pearl 'til it's at zero. Gotta be careful with that pressure or we risk hull breach and this party'll be over before it ever got started";
 					}
 				}
 			} else {
@@ -591,22 +698,65 @@ has static concealed;
 Class Striker
 with 	add_to_scope 
 			multitool,
-has proper;
+has proper animate;
 
-Striker raven "(self object)"
+Striker raven "Raven"
 with	name
 			'self' 'me' 'myself' 'raven' 'commander',
 		short_name
 			'you',
+		add_to_scope
+			fathom snowdrift,
 		description [;
 			print "Strike Force field commander, security and information specialist. An early recruit and founding member of Strike Force. ";
 			if (actor == self) {
-				print "Black belt in various forms of martial arts and a fine jazz saxophonist, if I do say so myself";
+				print "Black belt in various forms of martial arts and a fine jazz saxophonist, if you do say so yourself";
 			} else {
 				if (actor == snowdrift) print "Without the commander's good word, I wouldn't have been made a Striker. I owe her my career and trust her with my life";
 				if (actor == fathom) print "The commander has saved my hide more than once, and I even saw her defeat Shuriken in hand-to-hand combat training once. ONLY once, but still I'd never seen anyone defeat him before or since";
 			}
 			if (actor ~= player) rfalse; ".";
+		],
+		orders [new_room s;
+			Go:
+				new_room = real_location.selected_direction;
+				! print "estimated room: ", (the)new_room, "^";
+				if (new_room ofclass String) rfalse;
+
+				new_room = real_location.selected_direction();
+				! print "estimated room: ", (the)new_room, "^";
+				if (new_room == 0) rfalse;
+				
+				if (new_room has door) {
+
+					if (new_room hasnt open) {
+						if (new_room has locked || new_room hasnt openable)
+							rfalse;
+						give new_room open;
+					}
+				
+					if (new_room provides door_to) {
+						new_room = new_room.door_to();
+						if (new_room == 0 or 1)
+							rfalse;
+
+					} else if (self in new_room.&found_in-->0) {
+						new_room = new_room.&found_in-->1;
+					} else {
+						new_room = new_room.&found_in-->0;
+					}
+				}
+				
+				if (new_room > Directions && new_room <= top_object) {
+					! print "estimated room: ", (the)new_room, "^";
+					if (new_room ~= Airlock) {
+						objectloop (s ofclass Striker) {
+							if (parent(s) == new_room) {
+								print_ret (The)s, " is in position there at your orders already. Bunching up would increase your odds of being spotted. Move ", (the)s, " to a different location before moving in.";
+							}
+						}
+					}
+				}
 		],
 has female concealed;
 
@@ -634,30 +784,111 @@ with
 			scope_modified = true;
 			print_ret "Fathom accepts ", (the)noun, ".";
 	],
-	orders [;
+	orders [ new_room s;
 		Take:
-			<<Take noun>>;
+			if (TestScope(noun, self)) {
+				move noun to self;
+				update_moved = true;
+				"Copy that. Acquiring ", (the)noun;
+			}
+			"Sorry commander, that doesn't seem to be at my location";
 		Look:
 			print "~";
-			location.description();
+			parent(self).description();
 			print_ret ",~ he says.";
-		Examine: 
+
+		Examine:
+			if (TestScope(noun, self))
+				print_ret "~", noun.description(), ",~ he says.";
+			"Commander, there is no ", noun, " at my current position.";
+		Go:
 			print "~";
-			noun.description();
-			print_ret ",~ he says.";
-		Give:
-			if (parent(noun) ~= self)
-				"~Sorry, commander, I don't have that on me.~";
-			if (second has animate) {
-				if (noun == multitool) {
-					print_ret (The)self, " and ", (the)second, " confer with one another. ~He remembered to bring his along. We're good to go, commander.~";
+			new_room = parent(self).selected_direction;
+			if(new_room ofclass String)
+				print_ret (string) new_room;
+
+			new_room = parent(self).selected_direction();
+			if (new_room == 0)
+				print "That's a negative. There's no passage ", (name) Directions;
+			
+			! > This checks if new_room is any kind of valid object at all
+			! if(new_room <= Directions || new_room > top_object)
+			! 	rtrue;
+
+			! If the room in the desired direction is a door object
+			! starting handling the various possible states
+			if (new_room has door) {
+
+				! If the door is closed, open it when appropriate
+				if (new_room hasnt open) {
+					if(new_room has locked || new_room hasnt openable) {
+						new_room = 0;
+						print "The door won't budge. Awaiting further orders";
+					}
+					give new_room open;
 				}
-				move noun to second;
-				scope_modified = true;
-				"~Sure thing,~ he says, handing over ", (the)noun, ".";
+			
+				! Now we have an open door, check where it goes
+				! First up, standard door checks
+				! (Puny simple doors don't have door_to; see below)
+				if (new_room provides door_to) {
+					new_room = new_room.door_to();
+					if (new_room == 0)
+						print "That door doesn't seem to lead anywhere";
+					! door_to() may have finished handling things and sent the "all done" signal. Respect that.
+					if (new_room == 1)
+						rtrue;
+
+				! Puny simple doors are found_in an array of ONLY 2 items
+				! As we're in one of those two, our destination is the other one
+				} else if (self in new_room.&found_in-->0) {
+					new_room = new_room.&found_in-->1;
+				} else {
+					new_room = new_room.&found_in-->0;
+				}
+			}
+			
+			! Now that we have an actual room, move our character there
+			if (new_room > Directions && new_room <= top_object) {
+				if (new_room ~= Airlock) {
+					objectloop (s ofclass Striker) {
+						if (parent(s) == new_room) {
+							print "Commander, ";
+							if (s == raven) {
+								print "you are ";
+							} else {
+								print (the)s, " is ";
+							}
+							print_ret "positioned in ", (the)new_room, " already. Joining there would violate mission orders,~ he says.";
+						}
+					}
+				}
+				move self to new_room;
+				update_moved = true;
+				print "Heading ", (name) Directions, " to ", (the)new_room;
+			}
+			print ",~ he says";
+			if (new_room == real_location)
+				print " and joins you in here a brief moment later";
+			".";
+		Give:
+			if (second has animate) {
+				if (noun has shared) {
+					"~Looks like they remembered to bring one along, as ordered. Everything looks good, commander.~";
+				}
+				if (parent(noun) ~= self)
+					"Sorry commander, I don't have that on my person.~";
+				if (TestScope(self, noun)) {
+					move noun to second;
+					scope_modified = true;
+					"Roger that,~ he says, handing over ", (the)noun, ".";
+				}
+				"I don't see one of those anywhere near my location, commander.~";
 			} else {
 				"He squirrels up his face in confusion, ~Give the what to who now?~";
 			}
+		Open:
+			<<Open noun second>>;
 		Cut:
 			<<Cut noun>>;
 		Solder:
@@ -665,7 +896,7 @@ with
 		default:
 			"~That's probably better off being entrusted to your or Snowdrift's skills, commander.~";
 	],
-has animate talkable;
+has talkable;
 
 Striker snowdrift "Snowdrift"
 	with
@@ -689,37 +920,118 @@ Striker snowdrift "Snowdrift"
 				"[Try ~", (the)self, ", examine (the object in question)~]";
 			Give:
 				move noun to self;
-				scope_modified = true;
+				update_moved = true;
 				"Snowdrift takes ", (the)noun, " into his possession with a crisp nod of affirmation.";
 		],
-		orders [;
+		orders [ new_room s;
 			Take:
-				<<Take noun>>;
+				if (TestScope(noun, self)) {
+					move noun to self;
+					update_moved = true;
+					"~Copy that. Acquiring ", (the)noun, ",~ he confirms.";
+				} else {
+					"~Sorry commander, that doesn't seem to be at my location,~ he says.";
+				}
+			Go:
+				print "~";
+				new_room = parent(self).selected_direction;
+				if(new_room ofclass String)
+					print_ret (string) new_room;
+
+				new_room = parent(self).selected_direction();
+				if (new_room == 0)
+					print "That's a negative. There's no passage ", (name) Directions;
+				
+				! > top_object means an id greater than the largest id of all game objects, meaning invalid.
+				! if(new_room <= Directions || new_room > top_object)
+				! 	rtrue;
+
+				! If the room in the desired direction is a door object
+				! starting handling the various possible states
+				if (new_room has door) {
+
+					! If the door is closed, open it when appropriate
+					if (new_room hasnt open) {
+						if(new_room has locked || new_room hasnt openable) {
+							new_room = 0;
+							print "The door won't budge. Awaiting further orders";
+						}
+						give new_room open;
+					}
+				
+					! Now we have an open door, check where it goes
+					! First up, standard door checks
+					! (Puny simple doors don't have door_to; see below)
+					if (new_room provides door_to) {
+						new_room = new_room.door_to();
+						if (new_room == 0)
+							print "That door doesn't seem to lead anywhere. Odd";
+						! door_to() may have finished handling things and sent the "all done" signal. Respect that.
+						if (new_room == 1)
+							rtrue;
+
+					! Puny simple doors are found_in an array of ONLY 2 items
+					! As we're in one of those two, our destination is the other one
+					} else if (self in new_room.&found_in-->0) {
+						new_room = new_room.&found_in-->1;
+					} else {
+						new_room = new_room.&found_in-->0;
+					}
+				}
+				
+				! Now that we have an actual room, move our character there
+				if (new_room > Directions && new_room <= top_object) {
+					if (new_room ~= Airlock) {
+						objectloop (s ofclass Striker) {
+							if (parent(s) == new_room) {
+								print "Commander, ";
+								if (s == raven) {
+									print "you are ";
+								} else {
+									print (the)s, " is ";
+								}
+								print_ret "positioned in ", (the)new_room, " already. Joining there would violate mission orders,~ he says.";
+							}
+						}
+					}
+					move self to new_room;
+					update_moved = true;
+					print "Heading ", (name) Directions, " to ", (the)new_room;
+				}
+				print ",~ says ",(the) self, ".^";
+				if (new_room == real_location) 
+					print "^", (The)self, " joins you in ", (the)new_room, ".";
+				rtrue;
 			Look:
-				<<Look>>;
+				print "~";
+				parent(self).description();
+				print_ret ",~ he says.";
 			Examine: 
 				print "~";
 				noun.description();
 				print_ret ",~ he says.";
-			Give:
-				if (parent(noun) ~= self)
-					"~That's not on my person, ma'am.~";
-				if (second has animate) {
-					if (noun == multitool) {
-						print_ret (The)self, " checks with ", (the)second, ". ~Looks like he has his own already, as you'd requested back at base, commander.~";
-					}
-				move noun to second;
-					scope_modified = true;
-					"~Roger that, commander,~ he says as he hands ", (the)noun, " over to ", (the)second, ".";
-				} else {
-					"~Sorry ma'am, I don't follow your meaning.~";
-				}
 			Cut:
 				<<Cut noun>>;
+			Give:
+				if (second has animate) {
+					if (noun has shared) {
+						"~Looks like they remembered to bring one along, as ordered. We're good to go, commander.~";
+					}
+					if (parent(noun) ~= self)
+						"Sorry commander, I don't have that on my person.~";
+					if (TestScope(self, noun)) {
+						move noun to second;
+						scope_modified = true;
+						"Roger that,~ he says, handing over ", (the)noun, ".";
+					}
+					"I don't see one of those anywhere near my location, commander,~ he notes.";
+				} else {
+					"He squirrels up his face in confusion, ~Give the what to who now?~";
+				}
 			default:
 				"~Having *me* do that may endanger the mission, commander. You or Fathom are better suited to the task.~";
 		],
-has animate talkable;
+has talkable;
 
 [ SimpleUnlockSub;
 	"HAVOC has been known to make very dumb mistakes before, but in general their security is tight enough to prevent such simple unlocking to work.";
@@ -746,6 +1058,10 @@ Extend 'remove' last
 Verb 'replace' 'loosen' 'tighten'
 	* noun 'with'/'using' noun -> Screw;
 
+[ AttachClarifySub;
+	"The multitool has many functions. You'll need to be more specific about which part of the tool you want to use to attach those together.";
+];
+
 [ AttachSub;
 	if (noun ofclass Wire && second ofclass Wire) {
 		<<Solder noun second>>;
@@ -756,7 +1072,9 @@ Verb 'replace' 'loosen' 'tighten'
 Verb 'connect' = 'attach';
 Verb 'reattach' = 'attach';
 Extend 'attach' last
-	* noun 'to' noun 'with'/'using'/'by' 'tool'/'soldering'/'multitool'/'the multitool' -> Attach;
+	* noun 'to' noun 'with'/'using'/'by' 'tool'/'multitool' -> AttachClarify
+	* noun 'to' noun 'with'/'using'/'by' 'torch' -> Attach
+	* noun 'to' noun 'with'/'using'/'by' 'soldering' 'multitool'/'tool'/'iron'/'torch' -> Attach;
 
 [ SolderSub; 
 	if (TestScope(multitool, actor) == false)
@@ -785,13 +1103,17 @@ Extend 'attach' last
 ];
 
 Verb 'solder' 'fuse'
-	* noun 'to'/'and'/'with' noun -> Solder;
+	* noun 'to'/'and'/'with' noun -> Solder
+	* noun 'to'/'and'/'with' noun 'with'/'using'/'by' 'torch'/'tool'/'soldering'/'multitool' -> Solder
+	* noun 'to'/'and'/'with' noun 'with'/'using'/'by' 'soldering' 'multitool'/'tool'/'torch'/'iron' -> Solder
+	* noun 'with'/'using'/'by' 'torch'/'tool'/'multitool' 'to' noun -> Solder
+	* noun 'with'/'using'/'by' 'soldering' 'iron'/'tool'/'torch'/'multitool' 'to' noun -> Solder;
 
 [ DirectionPromptSub;
-	"Something at the base is causing your compass to behave erratically. You'll need to use nautical terms while on this mission: fore, aft, port, and starboard.";
+	"Something at the research facility is causing your compass to behave erratically. You'll need to use nautical terms while on this mission: fore (f), aft (a), port (p), and starboard (sb).";
 ];
 
-Verb 'n' 'north' 's' 'south' 'e' 'east' 'w' 'west' 'nw' 'northwest' 'ne' 'northeast' 'sw' 'southwest' 'se' 'southeast'
+Verb 'n//' 'north' 's//' 'south' 'e//' 'east' 'w//' 'west' 'nw' 'northwest' 'ne' 'northeast' 'sw' 'southwest' 'se' 'southeast'
 	* -> DirectionPrompt;
 
 [ UseExplainSub;
@@ -803,26 +1125,50 @@ Verb 'use' 'utilize'
 	* noun 'on'/'with' noun -> UseExplain;
 
 Verb 'describe' = 'examine';
-! [ SitRepSub;
-! 	print "says, ~I'm in ", (name)parent(noun), ", commander.~^";
-! ];
 
-! [ Strikers x y;
-! 	if (NextWord() == 'fathom' or 'snowdrift') return O;
-! 	if (NextWord() ~= 'team' or 'strikers') return GPR_FAIL;
-! 	objectloop (y ofclass Striker) multiple_object-->(++x) = y;
-! 	multiple_object-->0 = x;
-! 	return GPR_MULTIPLE;	
-! ];
+[ SitRepSub s o;
+	objectloop (s ofclass Striker) {
+		objectloop (o has shared)
+			move o to s;
+		update_moved = true;
+		if (s == player) {
+			print "You are ";
+		} else {
+			print (The)s, " is ";
+		}
+		print "at ", (the)parent(s), "^";
+		PrintContents("Carrying ", s, NEWLINE_BIT);
+		print "- - - - -^";
+	}
+	objectloop (o has shared)
+		move o to player;
+	update_moved = true;
+	rtrue;
+];
 
-! Verb 'sitrep'
-! 	* Strikers -> SitRep;
+Verb 'sitrep'
+	* -> SitRep;
 
-[Initialise;
+[ HelpSub;
+	print "Remember, each team member has a unique field of expertise and may have new insights on places and items.^^As field commander, you control Fathom and Snowdrift directly:^";
+	print "      fathom, go starboard^";
+	print "      snowdrift, examine the box^^";
+	print "For a summary of team member locations and inventory items:^";
+	print "      sitrep^^";
+	print "If you're stumped on verb/grammar, re-read relevant item descriptions. Ex: for a soldering iron try ~solder~^";
+	print "      solder (item) to (another item)^";
+	rtrue;
+];
+
+Verb 'help'
+	* -> Help;
+
+[Initialise o;
 	ship_directions_enabled = true;
 	normal_directions_enabled = false;
 
-	move multitool to player;
+	objectloop (o has shared)
+		move o to player;
 	move fathom to location;
 	move snowdrift to location;
 	update_moved = true;
