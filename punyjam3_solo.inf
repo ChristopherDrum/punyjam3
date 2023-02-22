@@ -1,0 +1,1710 @@
+!% -~S
+!% $OMIT_UNUSED_ROUTINES=1
+!% $ZCODE_LESS_DICT_DATA=1
+!% ++include_path=..\PunyInform\lib
+
+! The very first lines of the main source code file for a game can
+! contain compiler options, like the lines above. -~S disables
+! strict error checking. This is otherwise used in z5 and z8 games by
+! default. While useful for debugging, it adds ~10 KB to the story file
+! size and it makes the game slower.
+! $OMIT_UNUSED_ROUTINES=1 makes the compiler remove all routines which
+! aren't used. This can save some space.
+! $ZCODE_LESS_DICT_DATA=1 removes an empty data byte for every dictionary word.
+
+Constant Story      "Strike Force";
+Constant Headline   "^The Hydrogen Annihilator^Part 3: Infiltration at the Arctic Circle^^";
+
+! Uncomment ONE of the two following lines, to show either time or score/turns
+! Leaving both commented out makes the library bigger.
+!Constant STATUSLINE_TIME; Statusline time;
+Constant STATUSLINE_SCORE; Statusline score;
+ 
+! Comment out to keep track of score
+! The value is what will be shown as the score on statusline in z3
+Constant NO_SCORE = 0;
+
+! Customize the statusline in z5+ (has no effect in z3)
+!Constant OPTIONAL_SL_NO_SCORE;
+Constant OPTIONAL_SL_NO_MOVES;
+
+! Uncomment to add optional features to PunyInform
+Constant DEBUG;
+!Constant DIALECT_US ! Affects OPTIONAL_ENGLISH_NUMBER
+!Constant CUSTOM_ABBREVIATIONS;
+Constant CUSTOM_PLAYER_OBJECT = raven;
+Constant OPTIONAL_NO_DARKNESS;
+!Constant OPTIONAL_FULL_DIRECTIONS;
+Constant OPTIONAL_SHIP_DIRECTIONS;
+!Constant OPTIONAL_ALLOW_WRITTEN_NUMBERS;
+!Constant OPTIONAL_GUESS_MISSING_NOUN;
+!Constant OPTIONAL_EXTENDED_METAVERBS;
+!Constant OPTIONAL_EXTENDED_VERBSET;
+!Constant OPTIONAL_FLEXIBLE_INVENTORY;
+!Constant OPTIONAL_LANGUAGE_NUMBER;
+!Constant OPTIONAL_LIST_TOGETHER;
+!Constant OPTIONAL_PRINT_SCENERY_CONTENTS;
+!Constant OPTIONAL_SCORED;
+!Constant OPTIONAL_FULL_SCORE; ! Comment out NO_SCORE when uncommenting this
+Constant OPTIONAL_SIMPLE_DOORS;
+!Constant OPTIONAL_MANUAL_SCOPE;
+!Constant OPTIONAL_MANUAL_REACTIVE;
+!Constant OPTIONAL_ORDERED_TIMERS;
+Constant OPTIONAL_PROVIDE_UNDO;
+!Constant OPTIONAL_REACTIVE_PARSE_NAME;
+!Constant RUNTIME_ERRORS = 0; ! 0, 1 or 2. 0 = smallest file, 2 = most info
+
+! Define any library constants you need here, like MAX_SCORE, AMUSING_PROVIDED,
+! MAX_CARRIED, SACK_OBJECT,  etc.
+
+Constant DEATH_MENTION_UNDO;
+Constant INITIAL_LOCATION_VALUE = Ocean;
+
+Include "globals.h";
+
+! Define your attributes, common properties and global variables here, if any
+Attribute shared;
+Attribute small;
+
+Constant BASE_UNIT_TEMPERATURE	-200;
+Constant FAILSAFE_TEMPERATURE	-190;
+Constant TEMPERATURE_ADJUST		2;
+Constant FAILED_CRYSTAL_STAGE 	3;
+
+Constant MSG_ASK_DEFAULT 	1000;
+Constant MSG_ANSWER_DEFAULT 1001;
+Constant MSG_GO_CANT_GO 	1002;
+Constant MSG_UNLOCK_DEFAULT	1003;
+Constant MSG_WAIT_DEFAULT	1004;
+Constant MSG_YOU_HAVE_WON	1005;
+Constant MSG_YOU_HAVE_DIED	1006;
+Constant SKIP_MSG_PUSH_STATIC 1007;
+
+
+[ CantGoMessage;
+	if (parent(actor) == Ocean)
+		"Nothing but the vast expanse of the ocean lies that way and this is no time for a swim.";	
+	"Examining the wall you discern no sign of a passage in that direction, hidden or otherwise.";
+];
+
+[LibraryMessages p_msg p_arg_1 p_arg_2;
+	p_arg_1 = p_arg_2;
+	switch(p_msg) {
+		MSG_ASK_DEFAULT:
+			if (player == raven) {
+				"~Sorry commander, I appreciate you trying to involve me but I think our time is short. I'll be happy to train with you on whatever you think best back at base,~ he says.";
+			} else {
+				"~Keep the chit-chat down until the mission is over, soldier,~ she says.";
+			}
+		MSG_ANSWER_DEFAULT:
+			"~Getting static here, commander. Be advised.~";
+		MSG_GO_CANT_GO:
+			CantGoMessage();
+		MSG_UNLOCK_DEFAULT:
+			"The multitool makes quick work of picking open ", (the)noun, ". It's now unlocked.";
+		MSG_WAIT_DEFAULT:
+			"You silently assess the situation.";
+		MSG_YOU_HAVE_WON:
+			print "You have won!  (good ending)";
+		MSG_YOU_HAVE_DIED:
+			print "You've been captured!";
+		SKIP_MSG_PUSH_STATIC:
+			"You recall the commander's words, ~Leave no trace of having been here,~ and decide not to tamper with anything not strictly mission-related.";
+	}
+];
+
+! Define the entry point routines you need here, like Amusing, DarkToDark etc.
+[ DeathMessage;
+	switch (deadflag) {
+		3: print "Klaxons sound and spotlights activate; HAVOC has you in their clutches!";
+
+		4: print "An alarm pierces the silence as the containment unit is elevated to an iris hatch in the ceiling and is ejected. HAVOC forces arrive in moments.";
+
+		5: print "HAVOC personnel jump to immediate attention, swarming every corner of the base.";
+
+		6: print "Have you won?  (bad ending)";
+	}
+];
+
+! Uncomment to add PunyLib extensions
+!Include "ext_menu.h";
+!Include "ext_flags.h";
+!Include "ext_talk_menu.h"; ! Note: Also include ext_flags.h to allow use of flags
+!Include "ext_quote_box.h";
+!Include "ext_cheap_scenery.h";
+
+Include "puny.h";
+
+! Uncomment to add PunyLib extensions
+!Include "ext_waittime.h";
+
+[ PressAnyKey k; print "^^[Press any key to continue]"; @read_char 1 -> k; @erase_window 0; return k; ];
+
+[ PremiseIntro; 
+	print "Strike hard. Strike fast! STRIKE FORCE!^^
+	Strike Force is a multi-national assemblage of highly skilled operatives, each a specialist in their field. Operating out of international waters, this covert special missions force exists to secure the world's safety from the turmoil of HAVOC, a relentless force for evil and chaos.^^When the leaders of the world have a problem with no solutions in sight, Strike Force is the answer!";
+	PressAnyKey();
+];
+
+[ PreviouslyOn;
+	print "Previously on Strike Force...^^With Strike Force commandos distracted by a decoy attack on UN Headquarters, Master Bedlam unleashed HAVOC's most terrifying weapon yet, an instantaneous energy beam which targeted the Great Pyramids of Giza.^^After that devastating blow, Strike Force suffered yet another defeat at the fires of San Cristobal Volcano, failing to prevent HAVOC from obtaining the rare earth element ~pyritium.~^^In a stroke of luck, Hexadecimal decoded a quantum laptop seized from Lt. Medusa during the firefight giving Strike Force an unexpected new target: a deep sea research laboratory at the Arctic Circle. Major Vanguard sends Raven and Snowdrift on a daring stealth mission to infiltrate the station and obtain evidence of HAVOC's plans.
+	^^And now, part 3 of ~The Hydrogen Annihilator!~";
+	PressAnyKey();
+];
+
+[ Introduction;
+	print "The sea at the Arctic Circle is black and still, an alien world on earth daring brave souls to explore its depths. Sitting defiantly on the seabed one kilometer below the surface lies an ad hoc oceanic research station, a testament to HAVOC's advanced technology.^^From deep in the inky distance, two dim, violet spotlights approach the facility.^^";
+	print "~Gotta hand it to HAVOC, they're nothing if not adaptable. I've never seen anyplace like this in such extreme conditions,~ you say with a whistle.~How about you, Snowdrift?~^^~No, I haven't,~ he replies. ~But look there at the fore. That's a WVCA generator for extreme cold regulation.~^^~Something to keep the facility warm?~^^~That device is overkill, commander, even in these frigid waters. Related to their research, I'd suspect.~^^~Roger that,~ you acknowledge as you approach the aft airlock. You dismount your propulsion units and attach them to the facility via magnetic tethers.^^You address Snowdrift, ~OK, remember our mission: get in, get evidence, get out. Leave no trace of having been here. For once, we have offensive advantage so let's not blow it. First thing's first: I'll get that airlock open for you.~";
+	PressAnyKey();
+];
+
+[ Coda;
+	@erase_window 0;
+	deadflag = 2;
+	print "Snowdrift slips into the airlock, ~Mission accomplished, commander. I think the troops are starting to stir. Recommend we make a hasty retreat.~^^
+	Raven nods in agreement, ~Good work, soldier. I knew it was a wise bet bringing you into Strike Force. Let's get out of here.~^^
+	Fathom pats Snowdrift on the back as a silent thanks. The team hurredly redons the diving gear, floods the airlock, and exits back out into the ocean and the awaiting D.O.L.P.H.N. units.^^
+	With stealth and care, the vial containing the Ice-X sample is retrieved and the team speeds off toward their exfiltration point, swiftly disappearing into the dark, arctic waters.";
+	if (control_box has open) {
+		deadflag = 6;
+		print "^^Raven mutters to herself, ~Why do I have this nagging feeling I've forgotten something?~";
+		if (stepladder.next_to ~= main_console) {
+			print "^^Snowblind grows silent, ~Yeah, I do too.~";
+		}
+	} else if (stepladder.next_to ~= main_console) {
+		deadflag = 6;
+		print "^^Snowblind breaks the silence, ~Commander, I can't help but think I forgot something back at the research lab.~";
+	}
+
+	if (deadflag == 6) {
+		print "^^Raven, ~If any mistakes were made, there's nothing we can do about it now. We got what we came for, so hopefully that's enough to push things in our favor.^^~Hopefully...~ but she sounds troubled.";
+	}
+
+	print "^^^";
+	print "On the next episode of Strike Force!^";
+	print "* * * * * * * * * * * * * * * * * * * * *^";
+	if (deadflag == 2) {
+		print "Having gained an important tactical advantage with their flawless raid on the arctic research station, Strike Force pushes back against HAVOC's plans as Master Bedlam looks to harvest a rare gaseous compound at the top of Mount Everest in part 4 ~Summit of Doom!~";
+
+	} else {
+		print "Having quickly detected the infiltration of their arctic base, HAVOC gains the upper hand, swiftly bringing the world to its knees, holding The Great Wall of China ransom for $100 billion in part 4 ~The Destruction of Strike Force!~";
+	}
+];
+
+Object various "(facility various)"
+with	name
+			'wvca' 'generator' 'ribs',
+		found_in
+			Ocean,
+		description
+			"From where the team sits at the aft-side airlock door, and in this darkness, that part of the facility is out of sight.",
+has scenery;
+
+Object Ocean "Ocean, Outside the Airlock"
+with
+	initial
+		"(you now control Raven, Strike Force field commander and security expert)^",
+	description 
+		"You're outside the aft airlock door to HAVOC's secret research lab in the Arctic Ocean, some 500 fathoms below. Red, green, and white navigation lights decorate the facility, dimly illuminating the surrounding darkness of the Arctic depths.",
+	n_to
+		outer_airlock_door;
+
+Object Airlock "Airlock"
+with
+	initial[;
+		if (self hasnt general) {
+			give self general;
+			move snowdrift to self;
+			move fake_raven to self;
+			remove raven;
+			remove fake_snowdrift;
+			player = snowdrift;
+			move multitool to snowdrift;
+			update_moved = true;
+			give outer_airlock_door ~open;
+			"The two of you move swiftly into the airlock, sealing the door behind. As chamber pressure is re-established yellow lights flash silently, sure to draw attention to your presence!^^You hover a fist over an emergency release button, ready to punch it. However, your luck holds and the procedure finishes without incident. You quickly stash your pressure suits on available hooks.^^
+			~OK, Snowdrift, you're up. Whatever's happening here is likely in your field of expertise. Remember, once you return to the airlock the mission is over, no second chances. Make us proud,~ you say^^In quiet unison you chant, ~Strike hard, strike fast. Strike Force!~^^
+			(you now control Snowdrift, Strike Force's arctic specialist, expert in all things ice and snow)^";
+		}
+
+		if (toilet has general) {
+			deadflag = 2;
+			Coda();
+		}
+	],
+	description
+		"The far-aft airlock of HAVOC's research base. Enameled steel benches in battle grey line the portside wall. Hooks with diving suits dress the starboard wall. The inner airlock door leading fore has a porthole which looks out into the base. The outer airlock door is aft.",
+	s_to
+		outer_airlock_door,
+	n_to
+		inner_airlock_door;
+
+Object Receiving
+with
+	short_name
+		"Receiving Area",
+	description 
+		"This area seems to be used to stage goods and supplies as they're brought in from the airlock; nothing is currently staged. To port is an open pantry, to starboard is the galley, and fore leads through a short connecting passageway into the next module of the station.",
+	s_to
+		inner_airlock_door,
+	w_to
+		Pantry,
+	e_to
+		Galley,
+	n_to
+		MessHall;
+
+Object Pantry "Pantry"
+with
+	description
+		"Tidy shelves hold boxes, cans, sacks, and plastic containers of food. Every item is wrapped in a deep blue label with bold, white lettering.",
+	e_to
+		Receiving;
+
+Object foodstuffs "various food stuffs" Pantry
+with
+	name
+		'food' 'box' 'boxes' 'can' 'cans' 'sack' 'sacks' 'plastic' 'container' 'item' 'deep' 'blue' 'label' 'rigatoni' 'stuff' 'stuffs',
+	article
+		"",
+	description 
+		"There's a wide variety of food. A sample box is completely covered in a solid, deep blue with bold, white Helvetica reading ~RIGATONI~. Smaller text gives the total volume and ration size. On the backside in bright yellow is a tastefully small HAVOC logo.",
+has static;
+
+Object logo "HAVOC logo" Pantry
+with
+	name
+		'logo',
+	description 
+		"Makes one's skin crawl at what, and who, it represents.",
+has scenery;
+
+Object Galley "Galley"
+with
+	description
+		"A spotless, compact kitchen in stainless steel with the expected assortment of appliances and utensils: a stand mixer, microwave, magnetic knife block, and food processor. A walk-in refrigerator is built into the aft wall.",
+	w_to
+		Receiving;
+
+Object mixer "stand mixer" Galley
+with
+	name
+		'stand' 'mixer',
+	description
+		"A heavy-duty, professional grade stand mixer in stainless steel with dark blue accents. The dough paddle is installed.",
+has static;
+
+Object microwave "microwave" Galley
+with
+	name
+		'convection' 'microwave' 'oven' 'range',
+	description
+		"A stainless steel microwave oven with convection oven functions. A rotatable knob sets the digital timer. Big enough to hold a very large chicken.",
+has static;
+
+Object knives "magnetic knife block" Galley
+with
+	name
+		'magnetic' 'knife' 'block' 'knives' 'block',
+	description
+		"Affixed to the starboard wall above the stainless steel countertop is a heavy magnetic strip to which are attached a variety of chef's knives.",
+has static;
+
+Object food_processor "food processor" Galley
+with
+	name
+		'food' 'processor',
+	description
+		"A large-volume food processor. Looks like it could mince eight or so full-sized onions in one go.",
+has static;
+
+Object refrigerator "walk-in refrigerator" Galley
+with
+	name
+		'walk-in' 'fridge' 'refrigerator' 'freezer',
+	description
+		"A walk-in refrigerator/freezer is built into the aft wall. You know this model to be good for food and only food. It's presence doesn't explain the presence of the WVAC unit you saw when approaching the station.",
+	before [;
+		Enter:
+			"Seems the chef doesn't want anyone poking around uninvited in there. It's locked up tight.";
+		Unlock:
+			"The mysteries of the facility's research definitely aren't going to be found inside a restaurant-grade refrigerator.";
+	],
+has static;
+
+Object MessHall "Mess Hall"
+with
+	description
+		"This shared-use usage module is split with the starboard third dedicated to a mess hall and the remainder to recreation. The mess hall portion is barebones with long tables and utility chairs. The recreational area holds couches, plush chairs, a television, and other leisure items. Judging from the dining arrangement, there's no more than 20 personnel stationed here",
+	n_to
+		CorridorC,
+	s_to
+		Receiving;
+
+Object television_logo "HAVOC logo"
+with
+	name
+		'havoc' 'television' 'logo',
+	description
+		"The HAVOC logo in the same bright yellow as it is always printed in. It looks like television manufacturer's original logo was removed and covered with the HAVOC logo.",
+has scenery;
+
+Object television "flat screen television" MessHall
+with
+	name
+		'flat' 'screen' 'television' 'tv',
+	description
+		"A non-descript, 60~ flat screen television, perfect for a movie night under the arctic waters. Branded with the HAVOC bright yellow logo.",
+has scenery;
+
+Object couch "couch" MessHall
+with
+	name
+		'couch',
+	description
+		"Clad in the same dark blue material as the plush chairs, the couch is similarly plush and would seat 4 people comfortably. It is arranged to face the television.",
+has scenery;
+
+Object table "mess hall table" MessHall
+with
+	name
+		'long' 'table',
+	description
+		"Seats about 10 people, and there are two of them aligned in aft-fore rows.",
+has scenery;
+
+Object utility_chair "utility chair" MessHall
+with
+	name
+		'steel' 'folding' 'utility' 'chair',
+	description
+		"A folding, steel utility chair for use at the mess hall dining table.",
+	before [;
+		Enter:
+			"It doesn't look very inviting, and sitting around increases the risk of being discovered.";
+	],
+has supporter scenery;
+
+Object plush_chair "plush chair" MessHall
+with
+	name
+		'reclining' 'plush' 'chair',
+	description
+		"Even bad guys need to take a load off from time to time. Plush, reclining chairs clad in dark blue upholstery with pop-out footstools. They do look comfortable.",
+	before [;
+		Enter:
+			"Lounging around in enemy territory puts not just your and the commander's lives at risk, but potentially the whole world if this mission isn't successful!";
+	],
+has supporter scenery;
+
+Object CorridorC "Corridor, Aft Module"
+with
+	description
+		"More cramped and submarine-like than the facility's design up to this point would have suggested. This is part of the corridor ~spine~ for the facility you saw on approach. Exits lie fore and aft, and doors lie to port and starboard.",
+	n_to
+		CorridorB,
+	s_to
+		MessHall,
+	e_to 
+		"You peek through the porthole window in the door. Inside are barracks, and maybe a dozen HAVOC personnel sleeping.",
+	w_to
+		"Exercising an abundance of caution, you steal a glance through the porthole in the door to see what lies beyond. A dozen or so HAVOC personnel are barracked here. Best not to enter the hornet's nest";
+
+Object port_door "port door" CorridorC
+with
+	name
+		'port' 'door' 'porthole',
+	description [;
+		<<Go FAKE_W_OBJ>>;
+	],
+has scenery;
+
+Object _door "starboard door" CorridorC
+with
+	name
+		'starboard' 'door' 'porthole',
+	description [;
+		<<Go FAKE_E_OBJ>>;
+	],
+has scenery;
+
+Object CorridorB "Corridor B, Central Module"
+with
+	description
+		"Spacious with a polished, high-tech design that appears to match the design at the foremost end of the corridor, where the main dome unit sits. The module between here and the dome matches the industrial look of the barracks module.",
+	before [;
+		Search:
+			"This module may have been installed out of order between the aft barracks and fore latrine, a sign of rushed assemblage. Embedded into the partition that separates this command module from the aft barracks is a series of evenly spaced, pale blue lights.";
+	],
+	n_to
+		CorridorA,
+	s_to [;
+		if (parent(vial) == actor) {
+			if (self hasnt general) {
+				give self general;
+				if (sensor_array hasnt general) {
+					"Just as you're about to cross through, your Strike Force intuition kicks in. Something feels off.";
+				} else {
+					"Just as you're about to continue through, you recall the sensor array you inspected earlier. Is it really safe to take the vial across the threshold?";
+				}
+			} else {
+				deadflag = 5;
+				print "You choose to risk it, judging that you ";
+				if (sensor_array hasnt general) {
+					print "are just being paranoid. ";
+				} else {
+					print "have mis-identified the purpose of the blue lights. ";
+				}
+				print "But the lesson of second-guessing yourself in the field is quickly learned as the klaxon blares the instant you cross the portal threshold";
+				if (sensor_array has general)
+					print " with the vial";
+				".";
+			}
+		}
+		return CorridorC;
+	],
+	w_to 
+		Security,
+	e_to
+		Operations;
+
+Object sensor_array "LX sensor array" CorridorB
+with
+	name
+		'pale' 'blue' 'light' 'lights' 'lx' 'sensor' 'array',
+	description [;
+		give self general;
+		"Commander Raven knows systems like this better, but it might be an LX series sensor array. These detect when microchipped materials cross its threshold. Typically it would be installed as close to the sensitive objects as possible, in this case closer to the dome unit probably. So either this module of the corridor was installed out of order, or the lights are not what your first instinct told you it is.";
+	],
+has scenery;
+
+Object corridor
+with
+	name
+		'corridor' 'hall' 'hallway' 'passage' 'passageway',
+	found_in
+		CorridorC CorridorB CorridorA,
+	before [;
+		Examine:
+			<<Examine real_location>>;
+		Search:
+			<<Search real_location>>;
+	],
+has scenery;
+
+Object Security "Security Module"
+with
+	description
+		"A high-tech bank of switches, lights, and monitors fills the fore wall of this module, and a long desk with advanced computer equipment, keyboards, and RAID drives fill the aft side. You find yourself wishing Commander Raven were here to make sense of this equipment.",
+	e_to
+		CorridorB;
+
+Object security_decorations "security decorations" Security
+with
+	name
+		'switch' 'switches' 'light' 'lights' 'monitor' 'monitors' 'bank',
+	description
+		"Your buddy, Hexadecmial, would have a field day with this stuff, but it's all well outside your area of expertise.",
+has scenery;
+
+Object Operations "Facility Operations Module"
+with
+	description
+		"Apparently even in the dark, frigid depths of the Arctic Ocean there's paperwork to be done. Two rows of 4 cubicles line the fore and aft walls with a clear pathway through the middle, down the length of the module, leading to a workgroup printer at the far starboard end.",
+	w_to
+		CorridorB;
+
+Object operations_decorations "operations decorations" Operations
+with
+	name
+		'cubicle' 'paperwork',
+	description
+		"Each cubicle is decked out with the same equipment, including a computer workstation with keyboard, boxes of floppy disks, filing cabinets, shelves of manuals and books, and various file folders and documents laying about in a state of half-completed work.",
+has scenery;
+
+Object cubicle_decorations "cubicle decorations" Operations
+with
+	name
+		'computer' 'workstation' 'keyboard' 'boxes' 'floppy' 'disks' 'filing' 'cabinets' 'manuals' 'books' 'file' 'folders' 'documents',
+	description
+		"There's too much to sort through to find interesting or useful evidence in the short time you have. The facility's dome module, to which you saw attached the WVCA generator, likely has something more concretely useful to the mission objective.",
+has scenery;
+
+Object printer "workgroup printer" Operations
+with
+	name
+		'workgroup' 'shared' 'printer',
+	description
+		"A heavy-duty workgroup laser printer. Judging from the uncollected printouts, its in need of a new toner cartridge.",
+has scenery;
+
+Object printout "faded printout" Operations
+with
+	name
+		'uncollected' 'printouts',
+	description
+		"It's so heavily faded from a bad print job as to be useless. You'll need to keep searching for something that will give Strike Force a real edge in the battle.",
+has scenery;
+
+Object CorridorA "Corridor, Fore Module"
+with
+	description
+		"The same industrial, submarine-like construction as you saw at the barracks module.The primary dome module sits just fore. Swinging doors lie port and starboard, and aft returns back to the central administrative module.",
+	n_to
+		Lab,
+	s_to
+		CorridorB,
+	w_to 
+		Showers,
+	e_to
+		Latrine;
+
+Object Showers "Showers"
+with
+	description
+		"A partitionless shower setup clad in stainless steel with showerheads along the aft wall, sinks with mirrors along the fore wall. Personal toiletries are stashed at the sinks, toothbrushes, razors, and the like. The floor is covered in a rubber mat with drainage holes.",
+	e_to
+		CorridorA;
+
+Object shower_decorations "shower decorations" Showers
+with
+	name
+		'showerhead' 'sink' 'mirror' 'toiletries' 'toothbrush' 'razor' 'rubber' 'mat',
+	description
+		"A quick scan of the shower accoutrements reveals nothing to help with the mission, and taking anything from here could raise suspicions in the morning.",
+has scenery;
+
+Object Latrine "Latrine"
+with
+	description [;
+		print "A few stainless steel sinks with personal mirrors, standing urinals in stainless steel, and similarly uninviting stalls occupy the borders of the latrine. A moderately-sized porthole window on the starboard wall offers a view outside.";
+		if (self hasnt visited)
+			print "Faint movement in the water just outside the porthole catches your attention.";
+		"";
+	],
+	final_sequence
+		0,
+	safe_to_exit
+		true,
+	daemon [;
+		self.final_sequence = self.final_sequence + 1;
+		self.safe_to_exit = true;
+		switch (self.final_sequence) {
+			1:	self.safe_to_exit = false;
+				"Suddenly, the door to the latrine slams open!";
+			2: 	self.safe_to_exit = false;
+				"Rushed, heavy footsteps approach your location.";
+			3:	
+				"The stall door next to you opens and shuts with a bang. You hear the stall lock being hurredly fidgeted into place.";
+			4:
+				"The occupied stall is quiet, then trousers fall to the floor around the occupant's ankles.";
+			5:
+				"The occupant yelps in sudden shock. ~Are heated toilet seats out of budget?~ he mutters to himself.";
+			6:
+				"A stack of HAVOC training manuals and other reading material are dropped to the floor by his feet.";
+			7:
+				"You hear a quiet sigh of relief.";
+			default:
+				switch (random(4)) {
+					1: "You hear humming coming from the occupied stall.";
+					2: "You hear the pages of reading material being flipped through.";
+					3: "He drops what he was reading and picks up a different item from his stack.";
+					4: "Just silence from the occupied stall.";
+				}
+		}
+	],
+	w_to [;
+		if (self.final_sequence > 0) {
+			StopDaemon(self);
+			self.final_sequence = 0;
+			self.safe_to_exit = true;
+		}
+		return CorridorB;
+	];
+
+Object latrine_window "latrine window" Latrine
+with
+	name
+		'latrine' 'starboard' 'porthole' 'window' 'outside',
+	description [;
+		print "Navigation lights along the starboard side of the facility illuminate the immediate surroundings near the latrine window.";
+		if (toilet has general) {
+			"^^You can see the specimen vial settling into the silt of the ocean bed. It should be easy to retrieve once you're back in the water.";
+		}
+		if (self hasnt general) {
+			give self general;
+			"^^Oh no, you wish you hadn't seen that. It seems HAVOC is using the Arctic Ocean as a septic tank. Is there any place left on earth they haven't yet defiled with their presence?";
+		}
+	],
+has scenery;
+
+Object stall "stall" Latrine
+with
+	name
+		'stall',
+	description
+		"Three stalls, currently unoccupied (thank goodness!), sit close to the starboard wall. ",
+	before [;
+		Exit:
+			if (Latrine.safe_to_exit == false) {
+				deadflag = 5;
+				"A startled HAVOC soldier drops his reading material, assesses the situation, then screams, ~CODE BLACK! INTRUDER! SOUND THE ALARM!~";
+			}
+	],
+has scenery enterable supporter;
+
+Object toilet "toilet" stall
+with
+	name
+		'toilet' 'commode',
+	capacity
+		1,
+	description [;
+		print "Stainless steel, utilitarian, looks cold. Appears to operate on a vacuum flush mechanism.";
+		if (latrine_window has general)
+			print " If what you saw outside the porthole window is any indication, it flushes directly out to the ocean";
+		""; 
+	],
+	before [;
+		Receive:
+			if (noun hasnt small)
+				"That would only clog and overflow the toilet.";
+			if ((noun == vial) && (child(vial) == nothing))
+				"The vial is small enough to fit, but the mission purpose for putting it in the toilet is unclear. Maybe there will be a reason to flush it later?";
+		Flush:
+			print "The toilet evacuates with a vacuum flush";
+			if (child(self) ~= nothing) {
+				print " draining ", (the)child(self), " away";
+				if (child(self) == vial) {
+					move ice to containment_unit;
+					give self general;
+					StartDaemon(Latrine);
+				}
+				remove child(self);
+				update_moved = true;
+			}
+			". BA-WOOSH!";
+	],
+has static container openable;
+
+Object Lab "Main Research Laboratory"
+with
+	description [;
+		if (self hasnt general) {
+			give self general;
+			"You finally make your way into the primary domed unit of the facility. You weren't sure what you were expecting, but it definitely wasn't this. This immense, round room is clearly the reason for the facility's existence.^^The raised fore half has a deep, wraparound workbench molded into the walls and floor. Short, vertical partitions separate the workbench into 8m-long workspaces, each one clearly devoted to a different research process. One is stacked with beakers and tubes. One sports a gas ventilation hood. One seems to have UV lights installed. A few have equipment you've never seen before.^^
+			The aft half, by the door, is lower and rises in a series of concentric half-circle steps up to the fore half. There isn't much back here except a large storage cabinet.^^Clearly the room's design is meant to showcase the centerpiece object of research. In the middle of the room is a huge, glass cylinder mounted on a steel base, containing a large volume of something unworldly beautiful. Blue crystals, suspended in a clear fluid, shimmer and sparkle with an internal energy that is mesmerizing to watch.^^
+			Could it be? Has HAVOC successfully developed Ice-X?";
+		}
+		"A modern, perfectly round room designed around a central core which holds a large glass cylinder filled with a blue crystalline structure that is likely Ice-X. The back(aft) half of the room is barebones, merely holding a large supply cabinet. Concentric half-circle steps lead up to the front(fore) half of the room which sports a 180 degree wraparound workbench divided into smaller workstations.";
+	],
+	s_to
+		CorridorA;
+
+Object main_console "laboratory workbench"
+with
+	name
+		'lab' 'workstation' 'primary' 'main' 'workbench' 'console',
+	description
+		"The workbench is molded directly into the outer wall and floor, as though it had grown out of them. The workbench proper holds a bewildering array of scientific tools, many you recognize from your research with hyperice; there's nothing unique about them. Next to the port side of the bench sits a rolling stepladder. Sitting on the floor to the starboard side is a large piece of advanced technology, possibly a cryoflux inducer.",
+	article
+		"the",
+	found_in
+		Lab,
+has static;
+
+Object lab_scenery "lab scenery" Lab
+with
+	name
+		'scientific' 'tools',
+	description
+		"Typical research equipment for working with man-made ice structures, like those forced out of elements that wouldn't normally produce ice. You have some of this equipment back at Strike Force headquarters; it's nothing remarkable on its own.",
+has scenery;
+
+Object cryoflux "cryoflux inducer" Lab
+with
+	name
+		'cryoflux' 'inducer',
+	description
+		"If only you could get this machine out of HAVOC hands and into your own lab! They must have deep pockets to fund the development of such a device. There are certain theoretical ice crystal structures that an inducer would be able to coax out of basic water. Or at least it was theoretical until you saw the Ice-X with your own eyes.",
+	before [;
+		SwitchOn, SwitchOff:
+			"There is no simple on/off switch for a machine this advanced. It would require intimate knowledge of its workings to activate its elaborate power cycling routine.";
+	],
+has switchable static;
+
+Object containment_unit "large glass containment unit"
+with
+	name
+		'large' 'glass' 'cylinder' 'containment' 'unit',
+	found_in
+		Lab,
+	temperature
+		BASE_UNIT_TEMPERATURE,
+	capacity
+		1,
+	description
+		"It dominates the center of the room, some 2m in diameter and 4m tall, filled with a dense mass of blue, shimmering, jewel-like crystals suspended in a clear liquid. The unit sits upon a metallic base with a small access hatch built into the top, just above water level, a bit out of reach. A large warning label is affixed to the glass. Mounted to the ceiling above the unit is a digital readout.",
+	before [;
+		Open:
+			<<Open hatch>>;
+	],
+	daemon [;
+		self.temperature = self.temperature + TEMPERATURE_ADJUST;
+		<Examine thermometer>;
+		if (self.temperature >= FAILSAFE_TEMPERATURE) {
+			deadflag = 4;
+			"The containment unit core temperature has risen above the failsafe threshold!";
+		}
+	],
+has transparent openable container static;
+
+Object containment_base "metallic base" containment_unit
+with
+	name
+		'metallic' 'base',
+	description
+		"A thick aluminum base that tapers slightly inward to meet the glass of the containment unit it supports. Various lights and readouts seem to illuminate the condition of the specimen the unit contains. One large red button stands out.",
+has transparent static;
+
+Object hatch "access hatch" containment_unit
+with
+	name
+		'access' 'hatch',
+	article
+		"an",
+	description
+		"A sliding hatch in the glass with a silicone seal, there is no handle or obvious locking mechanism.",
+	before [;
+		Open:
+			"There is no obvious way to manipulate the access hatch.";
+	];
+
+Object warning_label "warning label" containment_unit
+with
+	name
+		'warning' 'label' 'sign',
+	description[;
+		print "KEEP HATCH CLOSED AT ALL TIMES^";
+		print "Specimen temperature fluctuations^";
+		print "+- 10 degrees will trigger^";
+		print "containment unit jetison.";
+	],
+has static;
+
+Object thermometer "digital thermometer" Lab
+with
+	name
+		'digital' 'readout' 'thermometer',
+	description [;
+		if (containment_unit.temperature >= FAILSAFE_TEMPERATURE) {
+			"^The display reads:^CRITICAL^FAILURE";
+		} else {
+			"^The display reads:^CURRENT: ", containment_unit.temperature, "C^FAILSAFE: ", FAILSAFE_TEMPERATURE, "C";
+		}
+	],
+has static;
+
+
+Object red_button "large red button" containment_base
+with
+	name
+		'large' 'red' 'button',
+	description
+		"A large, red, translucent button lit from inside it reads `HATCH` in white Helvetica lettering.",
+	before [;
+		SwitchOn, SwitchOff, Push:
+			<<PushWith self second>>;
+		PushWith:
+			if (actor in stepladder) {
+				if (second == tongs) {
+					print "The tongs are just long enough to reach the button. ";
+				} else {
+					"It's a little too far out of reach to hit the button with ", (the)second, " from the top of the stepladder. Presumably this would normally be a two-person procedure.";
+				}
+			}
+			if (containment_unit hasnt open) {
+				give containment_unit open;
+				StartDaemon(containment_unit);
+				"The access hatch at the top of the containment unit slides open with a hiss. The air instantly becomes noticably cooler.";
+			} else {
+				give containment_unit ~open;
+				StopDaemon(containment_unit);
+				containment_unit.temperature = BASE_UNIT_TEMPERATURE;
+				"The access hatch at the top of the containment unit slides closed with the sound of vacuum sealing. The environmental system quickly rewarms the room.";
+			}
+	],
+has static;
+
+Object gloves "heavily insultated gloves"
+with
+	name
+		'heavily' 'insulated' 'glove' 'gloves',
+	article
+		"a pair of",
+	description
+		"These gloves are made of Cryon, a synthetic fiber that can withstand direct (brief!) contact with incredibly cold substances.",
+has clothing;
+
+Object tongs "long tongs" 
+with
+	name
+		'long' 'tongs' 'tong' 'pincers',
+	article
+		"",
+	capacity
+		1,
+	description
+		"Thin, stainless steel tongs about a meter long, designed to grab small objects. Likely used for taking Ice-X samples.",
+has transparent container;
+
+Object vial "specimen vial"
+with
+	name
+		'chipped' 'specimen' 'vial',
+	description [;
+		if (self hasnt moved)
+			print "A large quantity of heavily insulated specimen vials kept in a drawer labelled ~Chipped Vials~. ";
+		"A bit like a very small, overly-engineered thermos, it should keep any specimen perfectly hot or cold for a full 24 hours. Appears to hold about one gram, a peanut-sized volume.";
+	],
+	before [;
+		Open:
+			if (ice in self)
+				StartDaemon(ice);
+		Close:
+			if (ice in self)
+				StopDaemon(ice);
+				ice.melt_stage = 0;
+	],
+has small openable container;
+
+Object stepladder "small stepladder"
+with
+	name
+		'small' 'utility' 'stepladder' 'ladder' 'stairs' 'staircase',
+	found_in
+		Lab,
+	next_to
+		main_console,
+	description[;
+		print "A large, sturdy, heavy-duty, fiberglass stepladder on rolling caster wheels sits beside ", (the)self.next_to;
+		if (self.next_to == main_console)
+			print ", within a designated rectangle on the floor, denoted in yellow vinyl marking tape";
+		". It stands about a meter tall, and looks to provide a safe, stable platform for accessing out-of-reach areas.";
+	],
+	before [;
+		PushDir:
+			if (selected_direction == s_to) 
+				"Pushing it around outside the lab could draw unwanted attention and end the mission, but it could be positioned beside other things in the room.";
+			"There's nowhere to go that direction, and at any rate pushing it around outside the lab could compromise the mission. The ladder could be positioned next to other things in the room.";
+		Push:
+			"Push it to where?";
+		Transfer:
+			if (actor in self)
+				"I can't move the ladder while I'm standing on it.";
+			if (second ~= main_console or equipment_storage or containment_unit or containment_base)
+				"The ladder won't possibly be of any help near the ", (the) second, ".";
+			self.next_to = second;
+			"The caster wheels try to disobey, but the stepladder is now positioned alongside ", (the) second, ".";
+		Climb, Enter:
+			if (actor in self) 
+				"You're already standing on the stepladder.";
+			move actor to self;
+			update_moved = true;
+			if (self.next_to == main_console)
+				"There's not much to see from this vantage point, just the top of the laborary workstations, and there's nothing interesting there.";
+			if (self.next_to == equipment_storage)
+				"The top of the equipment storage locker is spotless and utterly dust free. HAVOC is nothing if not disciplined.";
+			if (self.next_to == containment_unit or containment_base)
+				"The stepladder provides just enough height to reach the access panel near the top of the containment unit.";
+	],
+has static supporter enterable;
+
+Object ice "Ice-X" containment_unit
+with
+	name
+		'azure' 'blue' 'crystal' 'crystals' 'ice' 'icex' 'ice-x' 'sample' 'fragile',
+	article
+		"the",
+	melt_stage
+		0,
+	description 
+		"Sparkling microcrystals of azure blue Ice-X. Quite fragile when exposed to air for even as short as 10 seconds. They seem to sparkle from an inner energy. The crystals make a faint sound. Its electric shimmer is almost hypnotic to watch.",
+	before [;
+		Listen:
+			"Coinciding with the shimmer you hear what sounds like the tinkling of glass chimes.";
+		Insert:
+			if (second ~= vial)
+				"There's no safe way to put ", (the)self, " into ", (the)second, ".";
+			if (vial hasnt open)
+				"The vial is closed.";
+			move ice to vial;
+			update_moved = true;
+			"Luckily, you have deep experience with similar crystaline substances and succesfully transfer the fragile Ice-X to the vial.";
+		Take:
+			if (parent(gloves) == actor) {
+				if (gloves has worn) {
+					"The gloves offer some protection from cold, but not enough to grab ", (the)self, " by hand.";
+				}
+			}
+			"Taking a sample of ", (the)self, " without any protection or tools would result in traumatic burns!";
+		PickUp:
+			if (actor notin stepladder) {
+				"The access hatch is too high up to reach without assistance.";
+			}
+			if (stepladder.next_to ~= main_console) {
+				"It's many meters between the containment unit and where you are at ", (the)stepladder.next_to, ". Maybe the stepladder could be moved closer?";
+			}
+			if (gloves hasnt worn) {
+				"Sticking a bare arm into the sub-arctic temperatures of the containment unit would bring the mission to an abrupt and painful end.";
+			}
+			if (second ~= tongs) {
+				"Even with gloves, reaching directly into the containment unit would cause traumatic ice burns.";
+			}
+
+			move ice to tongs;
+			update_moved = true;
+			StartDaemon(ice);
+			"The tongs worked well for the task of extracting a fragile crystal from the containment unit.";
+	],
+	daemon [;
+		if 	((parent(self) ~= containment_unit or vial) ||
+		 	((parent(self) == vial) && (vial has open))) {
+			self.melt_stage = self.melt_stage + 1;
+		}
+
+		if (self.melt_stage == FAILED_CRYSTAL_STAGE) {
+			move self to containment_unit;
+			self.melt_stage = 0;
+			update_moved = true;
+			print_ret (The)self, " quickly evaporate into a tiny wisp of pale blue steam from overexposure to the air.";
+		}
+	],
+	invent [;
+		print "a sample of Ice-X";
+		if (self in tongs) print " (held by tongs)";
+		rtrue;
+	],
+has small;
+
+Object equipment_storage "equipment storage locker"
+with
+	name
+		'equipment' 'storange' 'locker',
+	found_in
+		Lab,
+	description
+		"A steel locker with framed glass doors houses an assortment of disposable equipment for performing temperature-sensitive experiments.",
+	with_key
+		multitool,
+	before [;
+		Open:
+			give self open;
+			"Quite a bit of equipment here to search through; there's bound to be something useful.";
+		Search:
+			if (self hasnt general) {
+				give self general;
+				move gloves to self;
+				move tongs to self;
+				move vial to self;
+				update_moved = true;
+			}
+			"Insultated gloves, tongs, specimen vials, and more.";
+		Receive:
+			if (noun ~= gloves or tongs or vial)
+				"There's no place to put ", (the)noun, " into the storage locker without it being obviously out of place.";
+
+			if (noun == gloves) {
+				print "You return the gloves back to their storage hook";
+				if (ice in vial)
+					print ", exactly as you found them";
+				print ".";
+			}
+			if (noun == tongs) {
+				print "The tongs are returned to their original storage spot";
+				if (ice in vial)
+					print ", like nothing happened";
+				print ".";
+			}
+			if (noun == vial) {
+				if (ice in vial)
+					"With a sample of Ice-X in it, your infiltration would likely be recognized by HAVOC scientists in the morning.";
+				print "You place the vial back into its drawer.";
+			}
+			move noun to self;
+			update_moved = true;
+			rtrue;
+	],
+has container openable locked lockable;
+
+Object locker_lock "locker lock" Lab
+with
+	name
+		'lock',
+	description
+		"A trivially simple lock. The equipment inside must not be of particularly high value.",
+has scenery;
+
+Object dolphins "D.O.L.P.H.N. units"
+with
+	name
+		'propulsion' 'unit' 'dolphn' 'dolphin',
+	article
+		"your team's",
+	found_in
+		Ocean,
+	description 
+		"Affectionately known as a 'dolphin' (D.O.L.P.H.N. : Deep Oceanic Lifeline and Propulsive Hydro-Navigator), this one-man propulsion unit developed by and for Strike Force has a tempered glass bullet-dome front with motorcycle-style handles for steering and throttle. It drags the rider through water much faster than swimming.",
+	before [;
+		Enter:
+			"You've an internationally critical mission to perform before leaving, commander.";
+	],
+has enterable scenery;
+
+Object magnetic_tether "magnetic tether"
+with
+	name
+		'magnetic' 'tether',
+	description
+		"These magnetic tethers are the only thing keeping the D.O.L.P.H.N. units from being swept away by cross currents during the mission.",
+has scenery;
+
+Object outer_airlock_door "outer airlock door"
+with
+	name
+		'outer' 'airlock' 'door',
+	door_dir
+		(n_to) (s_to),
+	found_in
+		Ocean Airlock,
+	article
+		"the",
+	before [;
+		Pull, Open:
+			if (self has locked) "The handle is in the closed position.";
+			if (pressure_gauge.pressure + pressure_gauge.adjustment ~= 0)
+				"Though the door is unlocked, the pressure differential between the sea and the inner airlock is too great to open the door.";
+			if (self has open) "The airlock door is already open.";
+			give self open;
+			print "The door swings open, ";
+			if (green_wire hasnt general) {
+				deadflag = 3;
+				"triggering the alarm system!";
+			}
+			"silently and easily.";
+		SimpleUnlock:
+			"There's no lever, switch, or keyhole to make the unlocking of the airlock door so trivial. You'll need to bypass its electronic lock somehow.";
+	],
+	description [;
+		if (self has open) {
+			print "The airlock door is wide open. ";
+		} else {
+			print "Tightly fit into the bulkhead, the airlock door is engineered to enough precision to make it difficult to discern where the door ends and the hull of the facility begins. ";
+		}
+		print "^^A titanium panel to the left of the door is ";
+		if (control_box has open) {
+			print "floating in the water, attached to a control box by a bundle of colorful wires";
+		} else {
+			print "embedded into the steel hull";
+		}
+		" and a fist-sized dimple in the door houses a grippable handle.";
+	],
+has scenery door openable lockable locked;
+
+Object inner_airlock_door "inner airlock door"
+with
+	name
+		'inner' 'airlock' 'door',
+	door_dir
+		(n_to) (s_to),
+	found_in
+		Airlock Receiving,
+	article
+		"the",
+	description [;
+		if (self has open)
+			"The inner airlock door is wide open.";
+
+		"A bog-standard airlock door with a rotatable handle to unseal and open it into the main facility.";
+	],
+has scenery door openable lockable;
+
+Object handle "door handle"
+with
+	name
+		'rotatable' 'handle',
+	found_in
+		Ocean,
+	before [;
+		Turn:
+			if (red_wire.crossed == black_wire) {
+				if (outer_airlock_door has locked) {
+					give outer_airlock_door ~locked;
+					"The handle rotates smoothly. The airlock door should be openable now.";
+				} else {
+					give outer_airlock_door locked;
+					"The handle turns easily, resealing the airlock door.";
+				}
+			}
+			"The handle absolutely refuses to budge.";
+	],
+	description 
+		"An oblong handle with a grip sits inset and flush to the door's surface. It looks rotatable.",
+has scenery;
+
+Object ResearchFacility "HAVOC Research Facility"
+with
+	name
+		'secret' 'havoc' 'research' 'facility' 'lab',
+	found_in
+		Ocean,
+	description
+		"When you approached the facility, you caught a decent look at its construction. Two immense cannisters connected parallel, which is then connected to a wide shaft that runs like the spine of a great beast to a domed ~head~.^^6 shipping container-sized cannisters branch symmetrically from the tube; the ~ribs~ of the facility. It sits silently with minimal port and starboard navigation lights, and a lone white light above the aft airlock door. Your propulsion units float tethered to the hull.",
+has scenery;
+
+Object bulkhead "bulkhead"
+with
+	name
+		'bulkhead' 'hull' 'cannister' 'tube' 'corridor' 'dome' 'spine' 'ribs',
+	article
+		"the",
+	found_in
+		Ocean,
+	description [;
+		print "Sleek and sturdy, the stainless steel cannisters that comprise the bulkhead sit heavily on the silty ocean floor. The dome unit and the middle section of the corridor ~spine~ appeared to be newer than the rest of the modules";
+		if (control_box has open)
+			print ".^^A small panel has been unscrewed from the main bulkhead and floats, tethered to the hull by a bundle of rainbow-colored wires.";
+		".";
+	],
+has scenery;
+
+Object control_box "electrical control box"
+with
+	name
+		'titanium' 'access' 'panel' 'electrical' 'control' 'box' 'compartment',
+	short_name [;
+		if (self has open) {
+			print "electrical control box";
+		} else {
+			print "access panel";
+		}
+		rtrue;
+	],
+	article
+		"an",
+	found_in
+		Ocean,
+	add_to_scope
+		screws,
+	before [;
+		Tie:
+			if (second == bulkhead) <<Screw screws multitool>>;
+			"(I know 'guess the verb and grammar' can be hard; try the form ~attach something to something using something~)";
+		Open:
+			give self ~concealed;
+			give pressure_gauge ~concealed;
+	],
+	description [;
+		if (self hasnt open) {
+			"A flat square of metal with rounded corners, screwed into the surface of the facility's bulkhead with four stainless steel socket-headed screws.";
+		} else {
+			"The access panel is floating loose from the bulkhead, attached to a control box by a rainbow-colored bundle of wires. Now open, it reveals a book-sized compartment in the hull of the facility, which houses a small gauge.";
+		}
+	],
+has static container openable concealed;
+
+Object multitool "Strike Force multitool"
+with
+	name
+		'tool' 'multitool' 'screwdriver' 'compass' 'knife' 'utility' 'torch' 'soldering' 'lockpick' 'pick' 'data' 'storage' 'usb' 'pen' 'drive',
+	before [;
+		Give, Drop:
+			if (noun == self) "That's one of a Strike Force team members most important tools; every Striker has one and should keep it on their person at all times.";
+	],
+	description [;
+		print "A standard-issue Strike Force multitool for field operations. Can function as a (near) universal screwdriver, compass, utility knife, soldering torch, lockpick, and can store some 4 million bytes of data. Functions well in all environments";
+		if (self in snowdrift)
+			", even the frozen tundra of Antarctica.";
+		if (self in raven)
+			": land, sea, and air.";
+	],
+has shared;
+
+Object screws "socket-headed screws"
+with
+	name
+		'socket' 'bolt' 'bolts' 'screw' 'screws',
+	description
+		"Four 5/16~ stainless steel screws with a hexagonal socket in the head.",
+	before [;
+		Take, Remove, Turn:
+			"You try valiantly to remove the screws by hand, but it's no use. You'll need a tool.";
+		Screw:
+			if (control_box hasnt open) {
+				give control_box open;
+				"You loosen the captive screws with the multitool and the plate comes away from the hull, revealing a control box. The plate floats attached to the box by a colorful bundle of wires.";
+			} else {
+				give control_box ~open;
+				"You tighten the captive screws, firmly reattaching the access plate to the control box, leaving no visible sign of any tampering.";
+			}
+	],
+has scenery;
+
+Object wire_bundle "bundle of wires" control_box
+with
+	name
+		'colorful' 'bundle' 'cable' 'wires',
+	before [;
+		Take, Remove: "Removing the cable outright would likely trigger a systems failure alarm. HAVOC forces would swarm you in seconds.";
+	],
+	description [w;
+		if (self hasnt general) {
+			give self general;
+			print "A cable of 13 thick wires each a different color. You've hotwired enough security locks to know the red and black wires will unlock the door, if you reverse their polarity. Severing the green wire should disable the security alarm.^^
+
+			The multihued wires in light/dark pairs are trickier. Fathom, Strike Force's deep sea expert, taught you they balance airlock pressure against sea pressure, to allow the door to physically open. Cutting one will apply a pressure differential, as measured by the pressure gauge.^^";
+		} else {
+			print "A bundle of wires. Reversing polarity on the red and black will unlock the door, and cutting green should disable alarms. Cutting any other will apply that wire's pressure differential to the airlock, as measured by the gauge.^^";
+		}
+		print "The current state of the wires:";
+		objectloop (w ofclass Wire) {
+			print "^    ", (string)w.short_name;
+			if (w.pressure ~= 0) {
+				print " (", w.pressure, " bars)";
+			} else {
+				if (w ~= green_wire) {
+					print " (lock)";
+				} else {
+					print " (alarm)";
+				}
+			}
+			print " : ";
+			if (w.crossed) {
+				print "crossed with ", (the)w.crossed;
+			} else if (w has general) {
+				print "severed";
+			} else {
+				print "intact";
+			}
+		}
+		"";
+	],
+has static;
+
+!general means 'cut'
+Class Wire
+with
+	name
+		'wire',
+	article
+		"the",
+	pressure !default to 0, where 0 means neutral
+		0,
+	crossed
+		nothing,
+	before [;
+		Cut:
+			if (self has general) "That wire is already cut.";
+			if (self.crossed ~= nothing) {
+				give self.crossed general;
+				self.crossed.crossed = nothing;
+				self.crossed = nothing;
+			}
+			give self general;
+			print "With swift, practiced care, ", (the)self, " wire is snipped cleanly. ";
+			CalculatePressure();
+			"";
+	],
+	description [;
+		print (The)self, " wire which controls ", self.pressure, " bars of pressure is currently ";
+		if (self has general) {
+			print "severed";
+		} else {
+			if (self.crossed ~= nothing) {
+				print "cross-connected to ", (the)self.crossed;
+			} else {
+				print "intact";
+			}
+		}
+		".";
+	],
+has scenery;
+
+Wire red_wire "red wire" control_box
+with	name 'red',
+		short_name "red";
+
+Wire black_wire "black wire" control_box
+with	name 'black',
+		short_name "black";
+
+Wire green_wire "green wire" control_box
+with	name 'green',
+		short_name "green";
+
+Wire light_pink_wire "light pink wire" control_box
+with	name 'light' 'pink',
+		short_name "light pink",
+		pressure -5;
+
+Wire dark_pink_wire "dark pink wire" control_box
+with	name 'dark' 'pink',
+		short_name "dark pink",
+		pressure 5;
+
+Wire light_turquoise_wire "light turquoise wire" control_box
+with	name 'light' 'turquoise',
+		short_name "light turquoise",
+		pressure -10;
+
+Wire dark_turquoise_wire  "dark turquoise wire" control_box
+with	name 'dark' 'turquoise',
+		short_name "dark turquoise",
+		pressure 10;
+
+Wire light_orange_wire "light orange wire" control_box
+with	name 'light' 'orange',
+		short_name "light orange",
+		pressure -30;
+
+Wire dark_orange_wire "dark orange wire" control_box
+with	name 'dark' 'orange',
+		short_name "dark orange",
+		pressure 30;
+
+Wire light_purple_wire "light purple wire" control_box
+with	name 'light' 'purple',
+		short_name "light purple",
+		pressure -50;
+
+Wire dark_purple_wire "dark purple wire" control_box
+with	name 'dark' 'purple',
+		short_name "dark purple",
+		pressure 50;
+
+Wire light_grey_wire "light grey wire" control_box
+with	name 'light' 'grey',
+		short_name "light grey",
+		pressure -100;
+
+Wire dark_grey_wire "dark grey wire" control_box
+with	name 'dark' 'grey',
+		short_name "dark grey",
+		pressure 100;
+
+[ CalculatePressure w safe old_adj new_adj;
+	old_adj = pressure_gauge.adjustment;
+	new_adj = 0;
+	safe = true;
+	objectloop (w ofclass Wire) {
+		if (w.pressure ~= 0) {
+			if (w.crossed ~= nothing) {
+				safe = false;
+				if (pressure_gauge.danger == false) {
+					pressure_gauge.danger = true;
+				}
+			} else if (w has general) {
+				new_adj = new_adj + w.pressure;
+			}
+		}
+	}
+	pressure_gauge.adjustment = new_adj;
+	if (safe) {
+		if (pressure_gauge.danger == true) {
+			print " The needle settles down into a steady reading again.";
+		} else {
+			if (old_adj ~= new_adj) {
+				print " The needle on the pressure gauge adjusts itself in accordance with the wire manipulation.";
+			}
+		}
+		pressure_gauge.danger = false;
+	} else {
+		print " The needle on the attached gauge jumps around wildly!";
+	}
+];
+
+Object pressure_gauge "pressure gauge" control_box
+	with
+		name
+			'pressure' 'gauge',
+		pressure
+			125,
+		adjustment
+			0,
+		danger
+			false,
+		description [;
+			if (self.danger) {
+				"The pressure needle is jumping around wildly; there must be a crossed pressure wire! You've go to get this sorted out and fast!";
+			} else {
+				if (self hasnt general) {
+					give self general;
+					print "A small, round pressure gauge with demarcations ranging from -500, to 0 at the top, to +500 bars. ";
+				}
+				print "The gauge reads ";
+				print (self.pressure + self.adjustment), " bars. ";
+				if (self.pressure + self.adjustment == 0) {
+					"^^The pressure is equalized. Assuming security measures have been circumvented, the airlock door should open without trouble.";
+				} else {
+					"^^The airlock door will be impossible to open until the pressure is equalized.";
+				}
+			}
+		],
+has static concealed;
+
+Class Striker
+with 	add_to_scope 
+			multitool,
+has proper animate;
+
+Striker raven "Raven"
+with	name
+			'self' 'me' 'myself',
+		short_name
+			'yourself',
+		description
+			"Strike Force field commander, security and information specialist. An early recruit and founding member of Strike Force. Black belt in various forms of martial arts and a fine jazz saxophonist, if you do say so yourself.",
+has female concealed;
+
+Striker fake_raven "Raven"
+with	name
+			'raven' 'commander',
+		short_name
+			"Raven",
+		description 
+			"Strike Force field commander, security and information specialist. An early recruit and founding member of Strike Force. Without the commander's good word, I wouldn't have been made a Striker. I owe her my career and trust her with my life",
+		orders [;
+			default:
+				"~It's your show now, I'm here in case things go south,~ she says. ~So, keep the chatter down and focus on the job. I'd like to get out of here ASAP.~";
+		],
+has female animate;
+
+Striker fake_snowdrift "Snowdrift"
+with
+	name
+		'snow' 'snowdrift',
+	short_name
+		"Snowdrift",
+	description 
+		"Strike Force's Arctic specialist, expert on all things ice and snow. You personally recommended he be allowed to join Strike Force seeing in him the intrepid spirit that drives all Strikers in the fight against HAVOC.",
+	life [;
+		Order:
+			"Sorry commander, I appreciate you trying to involve me but I think our time is short. I'll be happy to train with you on whatever you think best back at base.";
+	],
+	orders [;
+		default:
+			"Snowdrift demures, ~I'm better suited to whatever awaits us inside, commander. I should leave infiltration matters in your capable hands.~";
+	],
+has animate;
+
+Striker snowdrift "Snowdrift"
+with
+	name
+		'self' 'me' 'myself',
+	short_name
+		'yourself',
+	description 
+		"Strike Force's Arctic specialist, expert on all things ice and snow. In my freetime I enjoy getting away on a quiet beach and am an avid reader. Joined Strike Force 2 years ago; anniversary is actually in just a couple of days.",
+has concealed;
+
+[ SimpleUnlockSub;
+	"HAVOC has been known to make very dumb mistakes before, but in general their security is tight enough to prevent such simple unlocking to work.";
+];
+
+Extend 'unlock'
+	* noun -> SimpleUnlock;
+
+[ ScrewSub;
+	if (second ~= multitool) {
+		"You use every skill in your considerable training to manipulate ", (the) noun, " with ", (the) second, " but it's just not possible without tool assistance.";
+	}
+];
+
+Extend 'turn'
+	* noun 'with'/'using' noun -> Screw;
+Extend 'remove' last
+	* noun 'with'/'using' noun -> Screw;
+Verb 'replace' 'loosen' 'tighten'
+	* noun 'with'/'using' noun -> Screw;
+
+[ AttachOrTie; 
+	if (~~(noun ofclass Wire && second ofclass Wire))
+		<<Tie noun second>>;
+	"Attaching wires to other wires is possible if you use the right tool for the job.";
+];
+
+[ AttachClarifySub;
+	"The multitool has many functions. You'll need to be more specific about which part of the tool you want to use to attach those together.";
+];
+
+[ AttachSub;
+	if (noun ofclass Wire && second ofclass Wire) {
+		<<Solder noun second>>;
+	}
+	"There's no clear way to attach ", (the)noun, " to ", (the)second, ".";
+];
+
+Verb 'connect' = 'attach';
+Verb 'reattach' = 'attach';
+Extend 'attach' first
+	* noun 'to' noun -> AttachOrTie;
+	* noun 'to' noun 'with'/'using'/'by' 'tool'/'multitool' -> AttachClarify
+	* noun 'to' noun 'with'/'using'/'by' 'torch' -> Attach
+	* noun 'to' noun 'with'/'using'/'by' 'soldering' 'multitool'/'tool'/'iron'/'torch' -> Attach;
+
+[ SolderSub; 
+	if (TestScope(multitool, actor) == false)
+		"That's not going to be possible without a multitool handy. It's standard-issue Striker equipment for a reason!";
+	if (~~(noun ofclass Wire) || ~~(second ofclass Wire))
+		"The soldering component of the multitool is really only strong enough for light tasks, like reconnecting wires.";
+	if ((noun hasnt general) || (second hasnt general))
+		"Only cut wires can be soldered together.";
+	if (noun == second) {
+		give noun ~general;
+		noun.crossed = nothing;
+		print (The)noun, " is fused back into one wire.";
+		CalculatePressure();
+		"";
+	}
+	if (noun ~= second) {
+		noun.crossed = second;
+		second.crossed = noun;
+		give noun ~general;
+		give second ~general;
+		print (The)noun, " and ", (the)second, " are now cross-fused.";
+		CalculatePressure();
+		"";
+	}
+	"UNEXPECTED: Some edge case fell through to here!";
+];
+
+Verb 'solder' 'fuse'
+	* noun 'to'/'and'/'with' noun -> Solder
+	* noun 'to'/'and'/'with' noun 'with'/'using'/'by' 'torch'/'tool'/'soldering'/'multitool' -> Solder
+	* noun 'to'/'and'/'with' noun 'with'/'using'/'by' 'soldering' 'multitool'/'tool'/'torch'/'iron' -> Solder
+	* noun 'with'/'using'/'by' 'torch'/'tool'/'multitool' 'to' noun -> Solder
+	* noun 'with'/'using'/'by' 'soldering' 'iron'/'tool'/'torch'/'multitool' 'to' noun -> Solder;
+
+[ DirectionPromptSub;
+	"Something at the research facility is causing your compass to behave erratically. You'll need to use nautical terms while on this mission: fore (f), aft (a), port (p), and starboard (sb).";
+];
+
+Verb 'n//' 'north' 's//' 'south' 'e//' 'east' 'w//' 'west' 'nw' 'northwest' 'ne' 'northeast' 'sw' 'southwest' 'se' 'southeast'
+	* -> DirectionPrompt;
+
+[ UseExplainSub;
+	"Being a member of the elite Strike Force, precision of words is as important as precision of actions. (try to come up with a more specific verb to apply to the situation)";
+];
+
+Verb 'use' 'utilize'
+	* noun -> UseExplain
+	* noun 'on'/'with' noun -> UseExplain;
+
+Verb 'describe' = 'examine';
+
+[ HelpSub;
+	print "Remember, each team member has a unique field of expertise and may have new insights on places and items.^^When playing as field commander Raven, you can control Fathom and Snowdrift directly:^";
+	print "      fathom, go starboard^";
+	print "      snowdrift, examine the box^^";
+	print "If you're stumped on verb/grammar, re-read relevant item descriptions. Ex: for a soldering iron try ~solder~^";
+	print "      solder (item) to (another item)^";
+	rtrue;
+];
+
+Verb 'help'
+	* -> Help;
+
+[ LockPickSub;
+	if (noun hasnt lockable)
+		print_ret (The)noun, " isn't pickable.";
+	if (noun hasnt locked)
+		print_ret (The)noun, " is already unlocked and isn't in need of further picking.";
+	if (second ~= multitool)
+		print_ret (The) second, " isn't up to the task of picking the lock of ", (the)noun, ".";
+	<<Unlock noun second>>;
+];
+
+[ PickUpSub;
+	if (second ~= tongs)
+		print_ret (The) second, " isn't designed grabbing or picking things up.";
+	if (noun hasnt small)
+		print_ret (The) noun, " is too big for the tongs to get a grip on.";
+	if (noun in tongs) 
+		"That's already being held by the tongs.";
+	move noun to tongs;
+	update_moved = true;
+	"The tongs prove well-suited to grasping small things like ", (the)noun, ".";
+];
+
+Verb 'grab' = 'take';
+
+Extend 'pick' last
+	* 'up' noun -> Take
+	* noun 'with'/'using' noun -> LockPick
+	* 'open' noun 'with'/'using' noun -> LockPick
+	* 'up' noun 'with'/'using' noun -> PickUp;
+
+Extend 'take' last
+	* noun 'with'/'using' noun -> PickUp;
+
+[ PushWithSub;
+	if (second ~= tongs) print_ret (The)second, " isn't suited to the task of pushing things around.";
+];
+
+Verb 'position' = 'push';
+Verb 'reposition' = 'push';
+Verb 'roll' = 'push';
+Extend 'push' last
+	* noun 'with'/'using' noun -> PushWith
+	* noun 'next'/'adjacent'/'over' 'to'/'near' noun -> Transfer
+	* noun 'beside'/'alongside'/'near' noun -> Transfer;
+
+
+Extend 'look' last
+	* 'out'/'outside' noun -> Examine;
+
+[ DescendSub; 
+	if ((noun == stepladder) || (actor in stepladder)) <<Exit noun>>;
+	"There's nowhere to descend when standing on the floor.";
+];
+
+Verb 'descend'
+	* -> Descend
+	* noun -> Descend;
+
+[ FlushSub;
+	if (noun ~= toilet) {
+		<Insert noun toilet>;
+		<<Flush toilet>>;
+	}
+];
+
+Verb 'flush'
+	* noun -> Flush;
+
+[ SearchLocationSub;
+	<<Search real_location>>;
+];
+
+Extend 'search' first
+	* -> SearchLocation;
+
+[Initialise;
+	ship_directions_enabled = true;
+	normal_directions_enabled = false;
+
+	move multitool to player;
+	move fake_snowdrift to location;
+
+	! this section tests the outcome
+	! give control_box open;
+	! stepladder.next_to = containment_unit;
+	! move ice to vial;
+	! move vial to player;
+
+	update_moved = true;
+	
+	PremiseIntro();
+	PreviouslyOn();
+	Introduction();
+];

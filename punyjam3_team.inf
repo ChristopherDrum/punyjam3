@@ -63,8 +63,6 @@ Constant INITIAL_LOCATION_VALUE = Airlock;
 Include "globals.h";
 
 ! Define your attributes, common properties and global variables here, if any
-Global good_ending = true;
-
 Attribute shared;
 Attribute small;
 
@@ -78,6 +76,7 @@ Constant MSG_ANSWER_DEFAULT 1001;
 Constant MSG_GO_CANT_GO 	1002;
 Constant MSG_UNLOCK_DEFAULT	1003;
 Constant MSG_WAIT_DEFAULT	1004;
+Constant MSG_YOU_HAVE_WON	1005;
 
 [ CantGoMessage;
 	if (parent(actor) == Ocean)
@@ -105,23 +104,21 @@ Constant MSG_WAIT_DEFAULT	1004;
 			"The multitool makes quick work of picking open ", (the)noun, ". It's now unlocked.";
 		MSG_WAIT_DEFAULT:
 			"You silently assess the situation.";
+		MSG_YOU_HAVE_WON:
+			print "You have won!  (good ending)";
 	}
 ];
 
 ! Define the entry point routines you need here, like Amusing, DarkToDark etc.
 [ DeathMessage;
 	switch (deadflag) {
-		2:  if (good_ending == true) {
-			print "On the next, thrilling episode, having gained the advantage, Strike Force pushes against HAVOC as Master Bedlam looks to harvest the rare gas HeXeAr at the top of Mount Everest~ in part 4 ~Summit of Doom!~";
-		} else {
-			print "On the next episode, having quickly detected the infiltration of their arctic base, HAVOC gains the upper hand, swiftly bringing the world to its knees in part 4 ~The Destruction of Strike Force!~";
-		}
+		3: print "Klaxons sound and spotlights activate; HAVOC has you in their clutches!";
 
-		3: print "Klaxons sound and spotlights activate; HAVOC has you in their clutches! You'll be bargaining chips for Master Bedlam, at best; subjects of Dr. Yellowjacket's experiments, at worst.";
+		4: print "An alarm pierces the silence! The containment unit slides up into an iris hatch in the ceiling and is ejected. HAVOC forces are on you in moments.";
 
-		4: print "The din of an alarm pierces the silence, when suddenly the containment unit rotates and slides up into an iris hatch in the ceiling and is ejected out into the ocean. Armed HAVOC forces are on your position in moments.";
+		5: print "HAVOC personnel jump to immediate attention, swarming every corner of the base. You're caught!";
 
-		5: print "HAVOC personnel jump to immediate attention, swarming every corner of the base. With luck, Major Vanguard will stage a rescue mission, though the chances are slim.";
+		6: print "Have you won?  (bad ending)";
 	}
 ];
 
@@ -162,23 +159,34 @@ Include "puny.h";
 
 [ Coda;
 	@erase_window 0;
-	print "Snowdrift slips into the airlock, ~Mission accomplished, commander. I think the troops are starting to stir. Recommend we get out of here and fast!~^^
-	Raven nods in agreement, ~You bet, soldier and good work. I knew it was a wise bet bringing you into Strike Force. Let's go.~^^
+	deadflag = 2;
+	print "Snowdrift slips into the airlock, ~Mission accomplished, commander. I think the troops are starting to stir. Recommend we make a hasty retreat.~^^
+	Raven nods in agreement, ~Good work, soldier. I knew it was a wise bet bringing you into Strike Force. Let's get out of here.~^^
 	Fathom pats Snowdrift on the back as a silent thanks. The team hurredly redons the diving gear, floods the airlock, and exits back out into the ocean and the awaiting D.O.L.P.H.N. units.^^
 	With stealth and care, the vial containing the Ice-X sample is retrieved and the team speeds off toward their exfiltration point, swiftly disappearing into the dark, arctic waters.";
 	if (control_box has open) {
-		good_ending = false;
+		deadflag = 6;
 		print "^^Raven mutters to herself, ~Why do I have this nagging feeling I've forgotten something?~ she wonders.";
 		if (stepladder.next_to ~= main_console) {
-			print "^^Snowblind grows silent, ~Yeah, me too.";
+			print "^^Snowblind grows silent, ~Yeah, me too.~";
 		}
 	} else if (stepladder.next_to ~= main_console) {
-		good_ending = false;
+		deadflag = 6;
 		print "^^Snowblind breaks the silence, ~Commander, I can't help but think I forgot something back at the research lab.~";
 	}
 
-	if (good_ending == false) {
+	if (deadflag == 6) {
 		print "^^Fathom pipes up, ~If any mistakes were made, there's not much we can do about it now. We got our evidence, so hopefully that will be enough to push things in our favor.~^^~Well, we'll see I guess,~ Raven offers, ~We'll see...~";
+	}
+
+	print "^^^";
+	print "On the next episode of Strike Force!^";
+	print "* * * * * * * * * * * * * * * * * * * * *^";
+	if (deadflag == 2) {
+		print "Having gained an important tactical advantage with their flawless raid on the arctic research station, Strike Force pushes back against HAVOC's plans as Master Bedlam looks to harvest a rare gaseous compound at the top of Mount Everest in part 4 ~Summit of Doom!~";
+
+	} else {
+		print "Having quickly detected the infiltration of their arctic base, HAVOC gains the upper hand, swiftly bringing the world to its knees, holding The Great Wall of China ransom for $100 billion in part 4 ~The Destruction of Strike Force!~";
 	}
 ];
 
@@ -479,6 +487,7 @@ with
 			if (child(self) ~= nothing) {
 				print " draining ", (the)child(self), " away";
 				if (child(self) == vial) {
+					move ice to containment_unit;
 					give self general;
 					StartDaemon(Latrine);
 				}
@@ -1852,8 +1861,17 @@ Extend 'search' first
 
 	objectloop (o has shared)
 		move o to player;
+
+
 	move fathom to location;
 	move snowdrift to location;
+
+	! this section tests the outcome
+	! give control_box open;
+	! stepladder.next_to = containment_unit;
+	move ice to vial;
+	move vial to player;
+
 	update_moved = true;
 	
 	! PreviouslyOn();
