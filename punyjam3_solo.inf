@@ -32,7 +32,7 @@ Constant OPTIONAL_SL_NO_MOVES;
 Constant DEBUG;
 !Constant DIALECT_US ! Affects OPTIONAL_ENGLISH_NUMBER
 !Constant CUSTOM_ABBREVIATIONS;
-Constant CUSTOM_PLAYER_OBJECT = snowdrift;
+Constant CUSTOM_PLAYER_OBJECT = raven;
 Constant OPTIONAL_NO_DARKNESS;
 !Constant OPTIONAL_FULL_DIRECTIONS;
 Constant OPTIONAL_SHIP_DIRECTIONS;
@@ -58,7 +58,7 @@ Constant OPTIONAL_PROVIDE_UNDO;
 ! MAX_CARRIED, SACK_OBJECT,  etc.
 
 Constant DEATH_MENTION_UNDO;
-Constant INITIAL_LOCATION_VALUE = CorridorA;
+Constant INITIAL_LOCATION_VALUE = Ocean;
 
 Include "globals.h";
 
@@ -84,6 +84,7 @@ Constant MSG_TURN_STATIC	1007;
 Constant MSG_TAKE_STATIC	1007;
 Constant MSG_TAKE_SCENERY	1008;
 Constant MSG_SEARCH_NOTHING_SPECIAL 1009;
+Constant MSG_PARSER_NOSUCHTHING 1010;
 
 [ CantGoMessage;
 	if (parent(actor) == Ocean)
@@ -113,11 +114,21 @@ Constant MSG_SEARCH_NOTHING_SPECIAL 1009;
 		MSG_YOU_HAVE_DIED:
 			print "You've been captured!";
 		MSG_TAKE_STATIC:
-			"You recall the commander's words, ~Leave no trace of having been here,~ and decide not to tamper with anything not strictly mission-related.";
+			"You recall the commander's words, ~Leave no trace we were here,~ and decide not to tamper with anything not strictly mission-related.";
 		MSG_TAKE_SCENERY:
 			"That's not going to advance your mission objective, soldier.";
 		MSG_SEARCH_NOTHING_SPECIAL:
 			"You move with the sharp efficiency that elite Strike Force training gave you, but discover nothing of note.";
+		MSG_PARSER_NOSUCHTHING:
+			switch(random(4)){
+				1: "Strike Force training gives you the mental discipline to recognize that won't be useful on this mission.";
+				
+				2: "You glance at it, quickly judging it non-mission critical.";
+
+				3: "You note its presence, but can tell from experience it won't come into play on this mission.";
+
+				4: "You trust your battle-tested Strike Force instincts and determine it's not important for today's mission.";
+			}
 	}
 ];
 
@@ -148,21 +159,16 @@ Include "puny.h";
 
 [ PressAnyKey k; print "^^[Press any key to continue]"; @read_char 1 -> k; @erase_window 0; return k; ];
 
-[ PremiseIntro; 
-	print "Strike hard. Strike fast! STRIKE FORCE!^^
-	Strike Force is a multi-national assemblage of highly skilled operatives, each a specialist in their field. Operating out of international waters, this covert special missions force exists to secure the world's safety from the turmoil of HAVOC, a relentless force for evil and chaos.^^When the leaders of the world have a problem with no solutions in sight, Strike Force is the answer!";
-	PressAnyKey();
-];
-
 [ PreviouslyOn;
-	print "Previously on Strike Force...^^With Strike Force commandos distracted by a decoy attack on UN Headquarters, Master Bedlam unleashed HAVOC's most terrifying weapon yet, an instantaneous energy beam which targeted the Great Pyramids of Giza.^^After that devastating blow, Strike Force suffered yet another defeat at the fires of San Cristobal Volcano, failing to prevent HAVOC from obtaining the rare earth element ~pyritium.~^^In a stroke of luck, Hexadecimal decoded a quantum laptop seized from Lt. Medusa during the firefight giving Strike Force an unexpected new target: a deep sea research laboratory at the Arctic Circle. Major Vanguard sends Raven and Snowdrift on a daring stealth mission to infiltrate the station and obtain evidence of HAVOC's plans.
+	print "Strike hard. Strike fast! STRIKE FORCE!^^
+	Strike Force is a multi-national assemblage of special mission operatives operating out of international waters. They serve to protect the world from HAVOC, a relentless force for evil and chaos.^^When world leaders have a problem with no other solutions, Strike Force is the answer!^^^^";print "Previously on Strike Force...^^Master Bedlam unleashed HAVOC's most terrifying weapon yet, an instantaneous energy beam which destroyed the Great Pyramids of Giza!^^While the world is held at ransom, Strike Force learns of a secret HAVOC research laboratory deep in the Arctic Ocean. Major Vanguard sends Raven and Snowdrift on a midnight mission to infiltrate the station and obtain evidence of HAVOC's plans.
 	^^And now, part 3 of ~The Hydrogen Annihilator!~";
 	PressAnyKey();
 ];
 
 [ Introduction;
-	print "The sea at the Arctic Circle is black and still, an alien world on earth daring brave souls to explore its depths. Sitting defiantly on the seabed one kilometer below the surface lies an ad hoc oceanic research station, a testament to HAVOC's advanced technology.^^From deep in the inky distance, two dim, violet spotlights approach the facility.^^";
-	print "~Gotta hand it to HAVOC, they're nothing if not adaptable. I've never seen anyplace like this in such extreme conditions,~ you say with a whistle.~How about you, Snowdrift?~^^~No, I haven't,~ he replies. ~But look there at the fore. That's a WVCA generator for extreme cold regulation.~^^~Something to keep the facility warm?~^^~That device is overkill, commander, even in these frigid waters. Related to their research, I'd suspect.~^^~Roger that,~ you acknowledge as you approach the aft airlock. You dismount your propulsion units and attach them to the facility via magnetic tethers.^^You address Snowdrift, ~OK, remember our mission: get in, get evidence, get out. Leave no trace of having been here. For once, we have offensive advantage so let's not blow it. First thing's first: I'll get that airlock open for you.~";
+	print "The ocean at the Arctic Circle is black and still, an alien world on earth daring humanity to explore its depths. Sitting defiantly on the seabed one kilometer down lies a HAVOC research station, its presence a blight on the pristine environment.^^From deep in the inky distance, two dim, violet spotlights approach the facility.^^";
+	print "~Gotta hand it to HAVOC, they're nothing if not adaptable,~ you say as you approach the station^^~Yeah, vermin typically are,~ quips Snowdrift. ~Commander, look there at the fore dome. That's a WVCA generator for temperature regulation.~^^~Something to keep the fascists warm?~^^Snowdrift clucks his tongue, ~That would be overkill, even in these waters. It's probably related to their research.~^^~Roger that,~ you acknowledge as you arrive at the aft airlock. You dismount your propulsion units and attach them to the facility via magnetic tethers.^^You address Snowdrift, ~OK, remember the mission: get in, get evidence, get out. Leave no trace we were here. For once, we have offensive advantage so let's not blow it. First thing's first: let me get that airlock open for you.~";
 	PressAnyKey();
 ];
 
@@ -212,8 +218,12 @@ Object Ocean "Ocean, Outside the Airlock"
 with
 	initial
 		"(you now control Raven, Strike Force field commander and security expert)^",
-	description 
-		"You're outside the aft airlock door to HAVOC's secret research lab in the Arctic Ocean, some 500 fathoms below. Red, green, and white navigation lights decorate the facility, dimly illuminating the surrounding darkness of the Arctic depths.",
+	description [;
+		print "You're outside HAVOC's secret research base in the Arctic Ocean, some 500 fathoms below. Navigation lights decorate the facility, dimly illuminating the surrounding darkness. ";
+		if (outer_airlock_door has open)
+			"To fore, the facility's aft airlock door stands open.";
+		"The airlock door to fore is closed.";
+	],
 	n_to
 		outer_airlock_door;
 
@@ -230,8 +240,8 @@ with
 			move multitool to snowdrift;
 			update_moved = true;
 			give outer_airlock_door ~open;
-			"The two of you move swiftly into the airlock, sealing the door behind. As chamber pressure is re-established yellow lights flash silently, sure to draw attention to your presence!^^You hover a fist over an emergency release button, ready to punch it. However, your luck holds and the procedure finishes without incident. You quickly stash your pressure suits on available hooks.^^
-			~OK, Snowdrift, you're up. Whatever's happening here is likely in your field of expertise. Remember, once you return to the airlock the mission is over, no second chances. Make us proud,~ you say^^In quiet unison you chant, ~Strike hard, strike fast. Strike Force!~^^
+			"You and Snowdrift move swiftly into the airlock, sealing the door behind. As chamber pressure is re-established, yellow lights flash silently, sure to draw attention to your presence!^^You hover a fist over an emergency release button, ready to punch it. However, your luck holds and the procedure finishes without incident. You quickly stash your pressure suits on available hooks.^^
+			~OK, Snowdrift, you're up. Whatever's happening here is likely in your field of expertise. Remember, once you return to the airlock the mission is over, no second chances,~ you say.^^In quiet unison you chant, ~Strike hard, strike fast. Strike Force!~^^
 			(you now control Snowdrift, Strike Force's arctic specialist, expert in all things ice and snow)^";
 		}
 
@@ -287,8 +297,13 @@ Object Receiving
 with
 	short_name
 		"Receiving Area",
-	description 
-		"This area seems to be used to stage goods and supplies as they're brought in from the airlock; nothing is currently staged. To port is an open pantry, to starboard is the galley, and fore leads through a short connecting passageway into the next module of the station.",
+	description [;
+		if (self hasnt general) {
+			give self general;
+			print "You take a quiet, cautious step out of the airlock and into the research base proper. Raven gives you a silent thumbs up.^^";
+		}
+		"This area seems to be used to stage supplies as they're brought in from the airlock; nothing is currently staged. To port is an open pantry, to starboard is the galley, and fore leads through a short connecting passageway into the next module of the station.",
+	],
 	s_to
 		inner_airlock_door,
 	w_to
@@ -312,7 +327,7 @@ with
 	article
 		"",
 	description 
-		"There's a wide variety of food. A sample box is completely covered in a solid, deep blue with bold, white Helvetica reading ~RIGATONI~. Smaller text gives the total volume and ration size. On the backside in bright yellow is a tastefully small HAVOC logo.",
+		"There's a wide variety to stave off culinary boredom. One sample box is a solid, deep blue with bold, white Helvetica ~RIGATONI~. Smaller text gives the total volume and ration size. On the backside in bright yellow is a tastefully restrained HAVOC logo.",
 	before [;
 		Eat:
 			"You shake off the crazy thought of cooking on a covert mission inside enemy territory and come to your senses.";
@@ -371,7 +386,7 @@ with
 	name
 		'walk-in' 'fridge' 'refrigerator' 'freezer',
 	description
-		"A walk-in refrigerator/freezer is built into the aft wall. You know this model to be good for food and only food. It's presence doesn't explain the presence of the WVAC unit you saw when approaching the station.",
+		"A walk-in refrigerator/freezer is built into the aft wall. You know this model isn't rated for temperatures that explain the presence of the WVAC unit you saw when approaching the station.",
 	before [;
 		Enter:
 			"Seems the chef doesn't want anyone poking around uninvited in there. It's locked up tight.";
@@ -547,7 +562,7 @@ has scenery;
 Object Security "Security Module"
 with
 	description
-		"A high-tech bank of switches, lights, and monitors fills the fore wall of this module, and a long desk with advanced computer equipment, keyboards, and RAID drives fill the aft side. You find yourself wishing Commander Raven were here to make sense of this equipment.",
+		"A high-tech bank of switches, lights, and monitors fills the fore wall of this module, and a long desk with advanced computer equipment, keyboards, and RAID drives fill the aft side. You find yourself wishing Commander Raven or Hexadecimal were here to make sense of this equipment.",
 	e_to
 		CorridorB;
 
@@ -1275,7 +1290,7 @@ with
 	found_in
 		Ocean,
 	description
-		"When you approached the facility, you caught a decent look at its construction. Two immense cannisters connected parallel, which is then connected to a wide shaft that runs like the spine of a great beast to a domed ~head~.^^6 shipping container-sized cannisters branch symmetrically from the tube; the ~ribs~ of the facility. It sits silently with minimal port and starboard navigation lights, and a lone white light above the aft airlock door. Your propulsion units float tethered to the hull.",
+		"When you approached the facility, you caught a decent look at its construction. Two immense cannisters in parallel, which are then connected to a wide shaft that runs like the spine of a great beast to a domed ~head~.^^6 shipping container-sized cannisters branch symmetrically from the spine, the ~ribs~ of the facility. It sits silently with minimal port and starboard navigation lights, and a lone white light illuminates the aft airlock door. Your propulsion units float tethered to the hull.",
 has scenery;
 
 Object bulkhead "bulkhead"
@@ -1313,12 +1328,10 @@ with
 	add_to_scope
 		screws,
 	before [;
-		Tie:
-			if (second == bulkhead) <<Screw screws multitool>>;
-			"(I know 'guess the verb and grammar' can be hard; try the form ~attach something to something using something~)";
-		Open:
-			give self ~concealed;
-			give pressure_gauge ~concealed;
+		Open: 
+			if (screws hasnt general)
+				"The access panel is screwed on tightly.";
+			"It's already wide open, its access panel floating in the water, tethered by a bundle of wires.";
 	],
 	description [;
 		if (self hasnt open) {
@@ -1327,7 +1340,7 @@ with
 			"The access panel is floating loose from the bulkhead, attached to a control box by a rainbow-colored bundle of wires. Now open, it reveals a book-sized compartment in the hull of the facility, which houses a small gauge.";
 		}
 	],
-has static container openable concealed;
+has static locked container openable concealed;
 
 Object multitool "Strike Force multitool"
 with
@@ -1357,10 +1370,16 @@ with
 			"You try valiantly to remove the screws by hand, but it's no use. You'll need a tool.";
 		Screw:
 			if (control_box hasnt open) {
+				give self general;
 				give control_box open;
+				give control_box ~concealed;
+				give pressure_gauge ~concealed;
 				"You loosen the captive screws with the multitool and the plate comes away from the hull, revealing a control box. The plate floats attached to the box by a colorful bundle of wires.";
 			} else {
+				give self ~general;
 				give control_box ~open;
+				give control_box concealed;
+				give pressure_gauge concealed;
 				"You tighten the captive screws, firmly reattaching the access plate to the control box, leaving no visible sign of any tampering.";
 			}
 	],
@@ -1609,7 +1628,7 @@ with
 	],
 	orders [;
 		default:
-			"Snowdrift demures, ~I'm better suited to whatever awaits us inside, commander. I should leave infiltration matters in your capable hands.~";
+			"Snowdrift demures, ~I'm here as the field expert on whatever HAVOC's researching, commander. Security matters are best suited to your capable hands.~";
 	],
 has animate;
 
@@ -1702,7 +1721,7 @@ Verb 'solder' 'fuse'
 	* noun 'with'/'using'/'by' 'soldering' 'iron'/'tool'/'torch'/'multitool' 'to' noun -> Solder;
 
 [ DirectionPromptSub;
-	"Something at the research facility is causing your compass to behave erratically. You'll need to use nautical terms while on this mission: fore (f), aft (a), port (p), and starboard (sb).";
+	"Something at the research facility is causing your multitool compass to behave erratically. You'll need to use nautical terms on this mission: fore (f), aft (a), port (p), and starboard (sb).";
 ];
 
 Verb 'n//' 'north' 's//' 'south' 'e//' 'east' 'w//' 'west' 'nw' 'northwest' 'ne' 'northeast' 'sw' 'southwest' 'se' 'southeast'
@@ -1805,6 +1824,9 @@ Verb 'flush'
 Extend 'search' first
 	* -> SearchLocation;
 
+Verb 'cross' 'reverse'
+	* noun 'with'/'and' noun -> AttachOrTie;
+
 [Initialise;
 	ship_directions_enabled = true;
 	normal_directions_enabled = false;
@@ -1820,7 +1842,6 @@ Extend 'search' first
 
 	update_moved = true;
 	
-	PremiseIntro();
 	PreviouslyOn();
 	Introduction();
 ];
