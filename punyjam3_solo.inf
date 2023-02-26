@@ -103,6 +103,7 @@ Constant MSG_SMELL_DEFAULT	1028;
 Constant MSG_TAKE_ALREADY_HAVE	1029;
 Constant MSG_TURN_ANIMATE	1030;
 Constant MSG_CUT_NO_USE	1031;
+Constant MSG_PUTON_ITSELF	1032;
 
 [ italic text;
 #IfV5;
@@ -192,6 +193,8 @@ Constant MSG_CUT_NO_USE	1031;
 			"Your multitool is designed to work with screws, not soldiers.";
 		MSG_CUT_NO_USE:
 			"You recall that HAVOC's latest plans forced you to postpone your annual mental health assessment with Dr. Grace. Keep it together until then, soldier.";
+		MSG_PUTON_ITSELF:
+			"Haphazardly moving things around could alert HAVOC that you were here. Better to leave that alone and keep a minimal footprint.";
 	}
 ];
 
@@ -207,6 +210,7 @@ Constant MSG_CUT_NO_USE	1031;
 		6: print "Have you won?  (bad ending)";
 
 		7: print "Complete Mission Failure!";
+
 	}
 ];
 
@@ -241,9 +245,9 @@ Include "puny.h";
 [ Coda;
 	@erase_window 0;
 	deadflag = 2;
-	print "Snowdrift slips into the airlock, ~Mission accomplished, commander. I think the troops are starting to stir. Recommend we make a hasty retreat.~^^
-	Raven nods in agreement, ~Good work, soldier. I knew it was a wise bet bringing you into Strike Force. Let's get out of here.~^^
-	The two hurredly redon their pressure gear, flood the airlock, and exit back out into the ocean and the waiting D.O.L.P.H.N. units.^^
+	print "Snowdrift slips into the airlock, ~Mission accomplished, commander. Recommend a hasty retreat.~^^
+	Raven nods in agreement, ~Good work, soldier. I knew it was a wise bet bringing you along. Let's get out of here.~^^
+	The two hurredly redon their pressure gear, flood the airlock, and exit back out into the ocean and their waiting D.O.L.P.H.N. units.^^
 	With stealth and care, the vial containing the Ice-X sample is retrieved and the team speeds off toward their exfiltration point, swiftly disappearing into the dark, arctic waters.";
 	if (control_box has open) {
 		deadflag = 6;
@@ -323,7 +327,7 @@ with
 			update_moved = true;
 			give outer_airlock_door ~open;
 			print "You and Snowdrift move swiftly into the airlock, sealing the door behind. As chamber pressure is re-established, yellow lights flash silently, sure to draw attention to your presence!^^You hover a fist over an emergency release button, ready to punch it. However, your luck holds and the procedure finishes without incident. You quickly stash your pressure suits on available hooks.^^
-			~OK, Snowdrift, you're up. Whatever's happening here is likely in your field of expertise. Remember, once you return to the airlock the mission is over, no second chances,~ you say.^^In quiet unison you chant, ~Strike hard, strike fast. Strike Force!~^^";
+			~OK, Snowdrift, you're up. To keep our chance of being detected as low as possible you have to go it alone. Once you rendezvous with me here we end the mission; no second chances,~ you say.^^In quiet unison you chant, ~Strike hard. Strike fast. Strike Force.~^^";
 			print_ret (italic)"[You now control Snowdrift, arctic specialist and expert in all things ice and snow.]^";
 		}
 
@@ -488,7 +492,7 @@ has static lockable concealed;
 Object MessHall "Mess Hall"
 with
 	description
-		"This shared-use module is split with the starboard third dedicated to a mess hall and the remainder to recreation. The mess hall portion is barebones with long tables and folding chairs.^^The recreational area holds couches, plush chairs, a television, and other leisure items. Judging from the dining arrangement, you estimate about 20 personnel are stationed here. From here you can continue deeper into the facility to fore, or return aft back to the receiving area and airlock.",
+		"This shared-use module is split with one third dedicated to a mess hall and the remainder to recreation. The mess hall portion is bare-bones with long tables and folding chairs.^^The recreational area holds couches, plush chairs, a television, and other leisure items.^^From here you can continue deeper into the facility to fore, or return aft back to the receiving area and airlock.",
 	n_to
 		CorridorC,
 	s_to
@@ -499,40 +503,24 @@ with
 	name
 		'havoc' 'logo',
 	description
-		"The HAVOC logo in the same bright yellow as it is always printed in. It looks like the original ~Magnetbox~ logo was scratched off and covered with HAVOC branding.",
+		"It looks like the television's original ~Magnetbox~ logo was scratched off and covered with HAVOC's bright yellow logo.",
 has scenery;
 
-Object television "flat screen television" MessHall
+Object recreational_scenery "recreational furniture" MessHall
 with
 	name
-		'flat' 'screen' 'television' 'tv',
+		'recreational' 'furniture' 'flat' 'screen' 'television' 'tv' 'couch' 'couches' 'plush' 'chairs' 'chair',
 	description
-		"A non-descript, 60~ flat screen television, perfect for a movie night under the arctic waters. Branded with the HAVOC bright yellow logo.",
+		"Even the bad guys need to relax sometimes. Plush couches and chairs are clad in identical dark blue fabric, arranged to face a state-of-the-art 36~ television branded with the HAVOC logo.",
 	before [;
+		Enter, Exit:
+			"Lounging around in enemy territory puts not just your and the commander's lives at risk, but potentially the whole world if this mission isn't successful!";
 		SwitchOff, SwitchOn:
 			"The noise that would make would end your mission here and now.";
+		Receive:
+			"Many an agent has blown an undercover mission by forgetting to retrieve something left out in the open. Field Operations Manual rule 19 exists for a reason!";
 	],
-has switchable scenery;
-
-Object couch "couch" MessHall
-with
-	name
-		'couch' 'couches',
-	description
-		"Clad in the same dark blue material as the chairs, the couch is similarly plush and would seat 4 people comfortably. It is arranged to face the television.",
-	before [;
-		Enter:
-			"While it definitely looks comfortable, this is absolutey the wrong time for leisure.";
-	],
-has supporter scenery;
-
-Object table "mess hall table" MessHall
-with
-	name
-		'long' 'table',
-	description
-		"Seats about 10 people, and there are two of them aligned in aft-fore rows.",
-has supporter scenery;
+has switchable scenery supporter enterable;
 
 Object leisure_items "leisure items" MessHall
 with
@@ -542,29 +530,19 @@ with
 		"A selection of board games, decks of cards, and the latest Sente 5200 game machine.",
 has scenery;
 
-Object folding_chair "folding chair" MessHall
+Object dining_scenery "dining furniture" MessHall
 with
 	name
-		'steel' 'folding' 'chair' 'chairs',
+		'dining' 'furniture' 'steel' 'folding' 'chair' 'chairs' 'long' 'table' 'tables',
 	description
-		"A steel, folding chair for use at the mess hall dining table.",
+		"Two long tables aligned parallel in aft-fore rows form a bare-bones dining area. Steel folding chairs are arranged along both tables. 24 people are stationed here, if the chair count is any indication.",
 	before [;
-		Enter:
-			"It doesn't look very inviting, and sitting around increases the risk of being discovered.";
+		Enter, Exit:
+			"They look uninviting at best, a waste of your limited time here at worst.";
+		Receive:
+			"Many an agent has blown an undercover mission by forgetting to retrieve something left out in the open. Field Operations Manual rule 19 exists for a reason!";
 	],
-has supporter scenery;
-
-Object plush_chair "plush chair" MessHall
-with
-	name
-		'reclining' 'plush' 'chair' 'chairs',
-	description
-		"Even bad guys need to take a load off from time to time. Plush, reclining chairs clad in dark blue upholstery with pop-out footstools. They do look comfortable.",
-	before [;
-		Enter:
-			"Lounging around in enemy territory puts not just your and the commander's lives at risk, but potentially the whole world if this mission isn't successful!";
-	],
-has supporter scenery;
+has scenery supporter enterable;
 
 Object CorridorC "Corridor, Aft Module"
 with
@@ -574,36 +552,54 @@ with
 		CorridorB,
 	s_to
 		MessHall,
-	e_to 
-		"You peek through the porthole window in the door. Inside are barracks, and maybe a dozen HAVOC personnel sleeping.",
-	w_to
-		"Exercising an abundance of caution, you steal a glance through the porthole in the door to see what lies beyond. A dozen or so HAVOC personnel are barracked here. Best not to enter the hornet's nest";
+	e_to [;
+		if (starboard_door hasnt general)
+			<<Examine starboard_door>>;
+		deadflag = 4;
+		"Against your better judgment you slip into the barracks as quietly as possible. From behind, a throat clears to get your attention. It seems a restless soldier was standing just out of sight from the porthole window.";
+	],
+	w_to [;
+		if (port_door hasnt general)
+			<<Examine port_door>>;
+		deadflag = 4;
+		"Against your better judgment you slip into the barracks as quietly as possible. From behind, a throat clears to get your attention. It seems a restless soldier was standing just out of sight from the porthole window.";
+	];
 
 Object port_door "port door" CorridorC
 with
 	name
-		'port' 'door' 'porthole',
+		'port' 'door' 'porthole' 'p//',
 	description [;
-		<<Go FAKE_W_OBJ>>;
+		give port_door general;
+		"Exercising an abundance of caution, you steal a glance through the porthole in the door to see what lies beyond. A dozen or so HAVOC personnel are barracked here. Best not to enter the hornet's nest.";
 	],
-has scenery;
+	before [;
+		Open:
+			<<Go FAKE_W_OBJ>>;
+	],
+has openable scenery;
 
-Object _door "starboard door" CorridorC
+Object starboard_door "starboard door" CorridorC
 with
 	name
-		'starboard' 'door' 'porthole',
+		'starboard' 'door' 'porthole' 'sb',
 	description [;
-		<<Go FAKE_E_OBJ>>;
+		give starboard_door general;
+		"You peek through the porthole window in the door. Inside are barracks, and maybe a dozen HAVOC personnel sleeping.";
 	],
-has scenery;
+	before [;
+		Open:
+			<<Go FAKE_E_OBJ>>;
+	],
+has scenery openable;
 
 Object CorridorB "Corridor B, Central Module"
 with
 	description
-		"This module's spacious, polished design is sandwiched between the more industrial, cramped barracks module to aft and the similar module immediately to fore. It feels out of place installed here.",
+		"The central module's spacious, futuristic design is sandwiched between the industrial, cramped modules at aft and fore. Passageways lead into rooms to port and starboard.",
 	before [;
 		Search:
-			"This module may have been installed out of order between the aft barracks and fore latrine; a sign of rushed assemblage. Embedded into the portal that connects this command module from the aft barracks is a series of evenly spaced, pale blue lights.";
+			"Embedded into the portal that connects this command module with the aft barracks is a series of evenly spaced, pale blue lights.";
 	],
 	n_to
 		CorridorA,
@@ -614,7 +610,7 @@ with
 				if (sensor_array hasnt general) {
 					"Just as you're about to cross through, your Strike Force intuition kicks in. Something feels off.";
 				} else {
-					"Just as you're about to continue through, you recall the sensor array you inspected earlier. Is it really safe to take the vial across the threshold?";
+					"Just as you're about to continue through, you recall the sensor array you inspected earlier. Is it safe to take lab materials across the threshold?";
 				}
 			} else {
 				deadflag = 5;
@@ -643,7 +639,7 @@ with
 		'pale' 'blue' 'light' 'lights' 'lx' 'sensor' 'array',
 	description [;
 		give self general;
-		"Commander Raven knows systems like this better, but it might be an LX series sensor array. These detect when microchipped materials cross their threshold. Given the design incongruity and security features, it was likely intended to connect closer to the dome as an anti-theft measure. Either this corridor module was installed out of order, or your instincts about the sensor array are wrong.";
+		"Commander Raven knows systems like this better, but it might be an LX array. These detect when microchipped materials cross their threshold. Given the design incongruity and security features, it was likely intended to be connected directly to the foremost dome unit as an anti-theft measure.";
 	],
 has scenery;
 
@@ -666,56 +662,83 @@ has scenery;
 Object Security "Security Module"
 with
 	description
-		"A high-tech bank of switches, lights, and monitors fills the fore wall of this module, and a long desk with advanced computer equipment, keyboards, and RAID drives fill the aft side. You find yourself wishing Commander Raven were here to make sense of this equipment.",
+		"A high-tech bank of switches, knobs, lights, and monitors fills the port-side half of the aft wall, and a rack of firearms fills the rest. You find yourself wishing Commander Raven were here to make sense of this equipment. The only exit is starboard, back to the main corridor.",
 	e_to
 		CorridorB;
 
 Object security_decorations "security decorations" Security
 with
 	name
-		'switch' 'switches' 'light' 'lights' 'monitor' 'monitors' 'bank' 'computer' 'keyboard' 'raid' 'drive',
+		'switch' 'switches' 'light' 'lights' 'monitor' 'monitors' 'bank' 'knob' 'knobs',
 	description
-		"Your buddy, Hexadecmial, would have a field day with this stuff, but it's all well outside your area of expertise.",
+		"You're just a scientist, not a security expert. Raven or Deadbolt would know what all of this does.",
+	before [;
+		SwitchOn, SwitchOff:
+			"Touching those without understanding them would trigger an alarm for sure.";
+	],
+has switchable scenery;
+
+Object weapon_decorations "weapon decorations" Security
+with
+	name
+		'firearms' 'firearm' 'weapon' 'weapons' 'aps' 'rifle' 'rifles' '.45' 'pistol' 'pistols' 'ammo' 'clips' 'clip' 'harpoon' 'gun' 'guns' 'arsenal',
+	description
+		"Like any fascist organization worth their salt, HAVOC is nothing if not paranoid. Even a couple of dozen scientists buried 1km under the sea are heavily armed. APS underwater assault rifles, .45 calibre pistols, ammo clips, and a couple of harpoon guns round out the arsenal.",
+	react_before [;
+		Shoot:
+			"Discharging a weapon would be an incredibly foolish thing to do, as much as you want to destroy this facility and everything it stands for.";
+	],
+	before [;
+		Take:
+			"HAVOC is known to take full stock of all weapons and ammunition every morning before rollcall. A single item out of place would draw instant suspicion.";
+	],
 has scenery;
 
-Object Operations "Facility Operations Module"
+Object Operations "Communications and Operations Module"
 with
 	description
-		"Apparently even in the dark, frigid depths of the Arctic Ocean there's paperwork to be done. Two rows of 4 cubicles line the fore and aft walls with a clear pathway through the middle, down the length of the module, leading to a workgroup printer at the far starboard end.",
+		"Tucked back into the starboard-most end of the module are pipes with gauges and valves, probably used to stabilize facility pressure as oceanic conditions shift.^^Closer to the port-side door is a communications module molded directly into the wall and floor. The only way out is where you came in, to port.",
 	w_to
 		CorridorB;
+
+Object communications_decorations "communications decorations" Operations
+with
+	name
+		'communications' 'module',
+	description [;
+		if (Lab has visited) {
+			print "A modern, sleek, almost mod design, matching what you saw in the main research lab. ";
+		} else {
+			print "Incongruously modern compared to what you've seen of the facility so far. HAVOC probably stole this tech from someone else. ";
+		}
+		"The communications array has a sonar, a radio headset plugged into one of a bank of 1/4~ jacks, an array of tuning knobs, a desk-mounted microphone, and more.";
+	],
+	before [;
+		SwitchOn, SwitchOff:
+			"Turning on/off such equipment would force a reset which would be noticed in the morning.";
+	],
+has switchable scenery;
+
+Object sonar "sonar" Operations
+with
+	name
+		'sonar',
+	description
+		"The sonar shows nothing on screen, which means the stealth coating Strike Force technicians brewed up for your D.O.L.P.H.N units works as advertised."
+has scenery;
 
 Object operations_decorations "operations decorations" Operations
 with
 	name
-		'cubicle' 'paperwork',
+		'pipe' 'pipes' 'gauge' 'gauges' 'valve' 'valves',
 	description
-		"Each cubicle is decked out with the same equipment, including a computer workstation with keyboard, boxes of floppy disks, filing cabinets, shelves of manuals and books, and various file folders and documents laying about in a state of half-completed work.",
+		"If Fathom were here, he'd know what these are for. They look like they require deep sea expertise to utilize without flooding the whole place inadvertently",
+	before [;
+		Turn:
+			"Manipulating these without understanding them could flood the entire operation. Strike Force would lose two top operatives, plus they'd still be in the dark about HAVOC's plans.";
+	],
 has scenery;
-
-Object cubicle_decorations "cubicle decorations" Operations
-with
-	name
-		'computer' 'workstation' 'keyboard' 'boxes' 'floppy' 'disks' 'filing' 'cabinets' 'manuals' 'books' 'file' 'folders' 'documents',
-	description
-		"There's too much to sort through to find interesting or useful evidence in the short time you have. The facility's dome module, to which you saw attached the WVCA generator, likely has something more concretely useful to the mission objective.",
-has scenery;
-
-Object printer "workgroup printer" Operations
-with
-	name
-		'workgroup' 'shared' 'printer',
-	description
-		"A heavy-duty workgroup laser printer. Judging from the uncollected printouts, its in need of a new toner cartridge.",
-has scenery;
-
-Object printout "faded printout" Operations
-with
-	name
-		'uncollected' 'printout' 'printouts',
-	description
-		"It's so heavily faded from a bad print job as to be useless. You'll need to keep searching for something that will give Strike Force a real edge in the battle.",
-has scenery;
+	
 
 Object CorridorA "Corridor, Fore Module"
 with
@@ -1933,7 +1956,7 @@ Extend 'attach' first
 		if ((noun hasnt general) || (second hasnt general))
 			"Only cut wires can be soldered together.";
 	} else {
-		"The multitool's soldering torch is relatively weak, but effective for wires. At any rate, soldering random objects together will only give HAVOC evidence of your incursion.";
+		"The multitool's soldering torch is relatively weak, really only effective for wires. At any rate, soldering random objects together will only give HAVOC evidence of your incursion.";
 	}
 	if (noun == second) {
 		give noun ~general;
@@ -2073,6 +2096,14 @@ Extend 'search' first
 
 Verb 'cross' 'reverse'
 	* noun 'with'/'and' noun -> AttachOrTie;
+
+[ ShootSub;
+	"There is no firearm nearby to fire. Even if there were, you'd jeopardize not just the mission but your and Raven's lives!";
+];
+
+Verb 'shoot' 'fire'
+	* -> Shoot
+	* noun -> Shoot;
 
 [ XyzzySub; 
 	print (italic)"Strike Force continues after these messages!^^";
