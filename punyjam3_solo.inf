@@ -29,10 +29,10 @@ Constant NO_SCORE = 0;
 Constant OPTIONAL_SL_NO_MOVES;
 
 ! Uncomment to add optional features to PunyInform
-Constant DEBUG;
+! Constant DEBUG;
 !Constant DIALECT_US ! Affects OPTIONAL_ENGLISH_NUMBER
 !Constant CUSTOM_ABBREVIATIONS;
-Constant CUSTOM_PLAYER_OBJECT = snowdrift;
+Constant CUSTOM_PLAYER_OBJECT = raven;
 Constant OPTIONAL_NO_DARKNESS;
 ! Constant OPTIONAL_FULL_DIRECTIONS;
 Constant OPTIONAL_SHIP_DIRECTIONS;
@@ -58,7 +58,7 @@ Constant OPTIONAL_PROVIDE_UNDO;
 ! MAX_CARRIED, SACK_OBJECT,  etc.
 
 Constant DEATH_MENTION_UNDO;
-Constant INITIAL_LOCATION_VALUE = Latrine;
+Constant INITIAL_LOCATION_VALUE = Ocean;
 
 Include "globals.h";
 
@@ -107,6 +107,7 @@ Constant MSG_PUTON_ITSELF	1032;
 Constant MSG_PUSH_SCENERY	1033;
 Constant MSG_PULL_SCENERY	1034;
 Constant MSG_TURN_SCENERY	1035;
+! Constant MSG_OPEN_DEFAULT	1036;
 
 [ italic text;
 #IfV5;
@@ -116,6 +117,20 @@ Constant MSG_TURN_SCENERY	1035;
 #IfV5;
 	style roman;
 #Endif;
+];
+
+[ RavenCheck ok;
+	ok = (access_panel hasnt general);
+	return ok; 
+];
+
+[ SnowblindCheck ok;
+	ok = 
+		((stepladder.next_to == workbench) &&
+		(gloves in equipment_storage) &&
+		(tongs in equipment_storage) &&
+		(equipment_storage has locked));
+	return ok;
 ];
 
 [ CantGoMessage;
@@ -252,20 +267,23 @@ Include "puny.h";
 	PressAnyKey();
 ];
 
-[ Coda;
+[ Coda rok sok;
 	@erase_window 0;
 	deadflag = 2;
 	print "Snowdrift slips into the airlock, ~Mission accomplished, commander. Recommend a hasty retreat.~^^
 	Raven nods in agreement, ~Good work, soldier. I knew it was a wise bet bringing you along. Let's get out of here.~^^
 	The two hurredly redon their pressure gear, flood the airlock, and exit back out into the ocean and their waiting D.O.L.P.H.N. units.^^
 	With stealth and care, the vial containing the Ice-X sample is retrieved and the team speeds off toward their exfiltration point, swiftly disappearing into the dark, arctic waters.";
-	if (control_box has open) {
+	rok = RavenCheck();
+	sok = SnowblindCheck();
+
+	if (~~rok) {
 		deadflag = 6;
 		print "^^Raven mutters to herself, ~Why do I have this nagging feeling I've forgotten something?~";
-		if (stepladder.next_to ~= main_console) {
+		if (~~sok) {
 			print "^^Snowblind grows silent, ~Yeah, I do too.~";
 		}
-	} else if (stepladder.next_to ~= main_console) {
+	} else if (~~sok) {
 		deadflag = 6;
 		print "^^Snowblind breaks the silence, ~Commander, I can't help but think I forgot something back at the research lab.~";
 	}
@@ -275,8 +293,7 @@ Include "puny.h";
 	}
 
 	print "^^^";
-	print "On the next episode of Strike Force!^";
-	print "* * * * * * * * * * * * * * * * * * * * *^";
+	print (italic)"On the next episode of Strike Force!^";
 	if (deadflag == 2) {
 		print "Having gained an important tactical advantage with their flawless raid on the arctic research station, Strike Force pushes back against HAVOC's plans as Master Bedlam looks to harvest a rare gaseous compound at the top of Mount Everest in part 4 ~Summit of Doom!~";
 
@@ -298,7 +315,7 @@ Object Ocean "Ocean, Outside the Airlock"
 with
 	initial [;
 		print (italic)"[You now control Raven, field commander and security expert.]^";
-		"You turn to Snowdrift, ~OK, remember our mission: get in, get evidence, get out. Leave no trace we were here.~^^Snowdrift asks, ~What kind of evidence, commander?~^^~Remains to be seen. HAVOC plays for keeps, so I suspect you'll know it when you see it. First thing's first: I need to get that airlock door open for you.~^";
+		"You turn to Snowdrift, ~OK, remember our mission: get in, get evidence, get out. Leave no trace we were here.~^^Snowdrift asks, ~What kind of evidence, commander?~^^~Remains to be seen. HAVOC has a penchant for the dramatic, so I suspect you'll know it when you see it. First thing's first: I need to get that airlock door open for you.~^";
 	],
 	description [;
 		print "You're outside HAVOC's secret research base in the Arctic Ocean, some 500 fathoms below. Navigation lights decorate the facility, dimly illuminating the surrounding darkness. ";
@@ -756,6 +773,12 @@ has scenery;
 
 Object CorridorA "Corridor, Fore Module"
 with
+	initial [;
+		if (self hasnt general) {
+			give self general;
+			"You've almost completely searched the entire facility and so far it has been extraordinarily dull with nothing worthy of Strike Force's attention. Did we receive bad intel? Are we searching in the wrong place?^";
+		}
+	],
 	description
 		"The same industrial, cramped construction as you saw at the barracks module. The primary dome module sits just fore. Swinging doors lie port and starboard. Aft will return to the central security and operations module.",
 	n_to
@@ -845,10 +868,14 @@ with
 				"Rushed, heavy footsteps approach the stalls.";
 			3:
 				self.safe_to_exit = false;
-				"You see bare feet aligned with your stall. He apparently hasn't noticed it's occupied!";
+				print "You see bare feet aligned with your stall. Hasn't he noticed it's occupied?^";
+				if (stall_door has open) {
+					print "^With the stall door wide open, your cover is blown.^^";
+					self.latrine_fail();
+				}
 			4:
 				if (stall_door hasnt locked) {
-					print "The door to your stall is flung wide open!^^";
+					print "The door to your stall is flung wide open! He begins to apologize, ~Oh, sorry, I didn't notice you were...~^^";
 					self.latrine_fail();
 				} else {
 					self.safe_to_exit = false;
@@ -938,10 +965,8 @@ has scenery door openable lockable;
 
 Object stall "Latrine (in the stall)"
 with
-	initial [;
-		print "You choose the starboard-most stall and enter, closing the door behind you.^";
-		give stall_door ~open;
-	],
+	initial
+		"You choose the starboard-most stall and enter.^",
 	description [;
 		<<Examine stall_door>>;
 	],
@@ -1007,28 +1032,36 @@ with
 	description [;
 		if (self hasnt general) {
 			give self general;
-			"You make your way into the primary domed unit of the facility, the research laboratory.^^
-			The floor rises in concentric half-circle steps up to the elevated back half at the fore of the room. A deep workbench runs 180 degrees from port to starboard along the elevated aft wall, molded into the walls and floor. It is partitioned into separate workspaces, each devoted to a different scientific discipline.^^
-			The circular room is designed to proudly show off the object at center: a glass cylinder that runs from floor to ceiling, filled with a dense mass of shimmering blue crystals. They seem charged with an internal energy.^^
-			You have a crazy theory that you just can't shake. Has HAVOC successfully developed Ice-X?";
+			"You make your way into the primary domed unit of the facility, the research laboratory. The commander wasn't joking about HAVOC's tendancy toward the dramatic.^^
+			A bright orange floor rises in concentric half-circle steps up to the elevated fore. A deep, bright white workbench runs 180 degrees from port to starboard along the elevated aft wall, molded into the walls and ceiling. It is partitioned into separate workspaces, each devoted to a different scientific discipline.^^
+			The steps encircle, and the room is designed around, a proud display of the prize at dead center: an immense glass cylinder that runs floor to ceiling, filled with a dense mass of shimmering blue crystals. They are charged with an internal energy, and give off refracted, alien light that prisms about the room. Combined with the mod stylings of the interior, you can't help but feel transported to an otherworldly discotheque.^^
+			Seeing the crystals and feeling their energy in proximity, you realize they've done the impossible. HAVOC has successfully developed Ice-X!";
 		}
-		"A perfectly round room designed around a central core which holds a glass cylinder filled with blue crystals, likely Ice-X. The back(aft) half of the room has a supply cabinet. Concentric half-circle steps lead up to the fore half of the room which sports a 180 degree wraparound workbench divided into smaller workstations.";
+		"A perfectly round room designed around a central core which holds a glass cylinder filled with blue crystals of Ice-X. The aft half of the room has a supply cabinet. Concentric half-circle steps lead up to the fore which sports a 180 degree wraparound workbench divided into smaller workstations.";
 	],
 	s_to
 		CorridorA;
 
-Object main_console "laboratory workbench"
+Object otherworldly_decoration "otherworldly decoration" Lab
 with
 	name
-		'lab' 'workstation' 'primary' 'main' 'workbench' 'console' 'bench',
+		'light' 'prism' 'refracted' 'alien' 'discotheque',
+	description
+		"The energy and lights are mesmerizing. It would be so easy to lose yourself in their hypnotic appeal.",
+has scenery;
+
+Object workbench "laboratory workbench"
+with
+	name
+		'lab' 'workstation' 'primary' 'main' 'workbench' 'console' 'bench' '180' 'wraparound' 'degree',
 	description [;
-		print "The workbench is molded directly into the outer wall and floor as one piece and holds a bewildering array of scientific tools. You recognize most of the tools from your research with hyperice; there's nothing unique about them.^^Next to the port end of the workbench ";
-		if (stepladder.next_to == main_console) {
+		print "The workbench is molded directly into the outer wall and floor as one piece and holds an array of scientific tools. You recognize most of the tools from your research with hyperice; there's nothing particularly unique about them.^^Next to the port end of the workbench ";
+		if (stepladder.next_to == workbench) {
 			print "sits a rolling stepladder. ";
 		} else {
 			print "is an area designated for stepladder storage, outlined on the floor in yellow tape. ";
 		}
-		"At the starboard end is a large piece of advanced technology, possibly a cryoflux inducer.";
+		"At the starboard end is a cryoflux inducer, an exciting piece of highly advanced cryogenic technology.";
 	],
 	article
 		"the",
@@ -1042,15 +1075,25 @@ with
 		'scientific' 'tools',
 	description
 		"Typical research equipment for working with ice structures, both natural and man-made. You have much of this equipment back at Strike Force headquarters; it's nothing remarkable on its own.",
+		react_before [;
+		Listen: 
+			if (noun == nothing or self)
+				"The dull hum of the WVCA unit keeping the central core cold, mixed with the faint crackle of electrical arcs. Then, just on the edge of hearing, you swear you hear the tinkling of very fine glass.";
+		Smell: 
+			if (noun == nothing or self)
+				"A light whiff of ozone, as from an electrically charged atmosphere. Unlike the rest of the facility, there is no discernable smell of brine or the inhabitants.";
+	],
 has scenery;
 
 Object cryoflux "cryoflux inducer" Lab
 with
 	name
-		'cryoflux' 'inducer',
+		'large' 'piece' 'technology' 'cryoflux' 'inducer',
 	description
 		"If only you could get this machine out of HAVOC's lab and into your own! There are theoretical ice structures that an inducer could coax out of even basic H20. Although the ~theoretical~ seems to have been made real here, judging from the central containment unit's contents.",
 	before [;
+		Take:
+			"Oh how you wish! Even if you could move 500kg covertly through the base without being caught, its absence would be a cause for immediate alarm in the morning.";
 		SwitchOn, SwitchOff:
 			"There is no simple on/off switch for a machine this advanced. It would require intimate knowledge of its workings to activate its elaborate power cycling routine.";
 	],
@@ -1059,43 +1102,52 @@ has switchable static;
 Object containment_unit "large glass containment unit"
 with
 	name
-		'large' 'glass' 'cylinder' 'containment' 'unit',
+		'central' 'core' 'immense' 'large' 'glass' 'cylinder' 'containment' 'unit',
 	found_in
 		Lab,
+	add_to_scope
+		ice,
 	temperature
 		BASE_UNIT_TEMPERATURE,
 	capacity
 		1,
 	description
-		"It dominates the center of the room, mounted on a metallic base, at some 2m in diameter and almost the entire 8m room height. It is filled with a dense mass of blue, shimmering, jewel-like crystals. A small access hatch with a warning label is built into the glass, just a bit out of reach. Mounted to the ceiling is an important looking digital readout.",
+		"It dominates the center of the room, mounted on an aluminum base, at some 2m in diameter and almost the entire 10m room height. It is filled with a dense mass of blue, shimmering, jewel-like crystals. A small access hatch with a warning label is built into the glass, just a bit out of reach. Mounted to the ceiling is a large amber display.",
 	before [;
 		Open:
 			<<Open hatch>>;
 	],
 	daemon [;
 		self.temperature = self.temperature + TEMPERATURE_ADJUST;
-		<Examine thermometer>;
+		if (IndirectlyContains(Lab, player)) {
+			print "^";
+			<Examine thermometer>;
+		}
 		if (self.temperature >= FAILSAFE_TEMPERATURE) {
 			deadflag = 4;
-			"^The containment unit core temperature has risen above the failsafe threshold! An alarm pierces the silence as the unit is elevated to an iris hatch in the ceiling and ejected into the sea.";
+			if (IndirectlyContains(Lab, player)) {
+				"^The containment unit core temperature has risen above the failsafe threshold! An alarm pierces the silence as the unit is elevated to an iris hatch in the ceiling and ejected out to sea.";
+			} else {
+				"^Utter chaos breaks out from the direction of the Lab! Sirens and a huge whoosh shatter the silence of the facility as HAVOC personnel tumble hurredly out of their barracks.";
+			}
 		}
 	],
 	invent
-		"a glass containment unit filled with sparkling blue crystals mounted on a thick base",
+		"a thick aluminum base packed with electronics supporting a tall, glass containment unit filled with sparkling blue crystals",
 has transparent openable container static;
 
 Object containment_base "metallic base" containment_unit
 with
 	name
-		'metallic' 'base',
+		'thick' 'electronic' 'aluminum' 'metallic' 'base',
 	description
-		"A thick aluminum base that tapers slightly inward to meet the glass of the containment unit it supports. Numerous lights seem to monitor the unit's overall health. One large red button stands out.",
+		"A thick aluminum base filled with electronics, it tapers slightly inward to meet the glass of the containment unit it supports. Numerous lights seem to monitor the unit's overall health. One large red button stands out.",
 has transparent static;
 
 Object hatch "access hatch" containment_unit
 with
 	name
-		'access' 'hatch',
+		'access' 'hatch' 'silicone' 'seal',
 	article
 		"an",
 	description [;
@@ -1104,9 +1156,11 @@ with
 		} else {
 			print "A meter or so out of reach is a ";
 		}
-		"sliding hatch in the containment unit, trimmed with a silicone seal. There is no handle nor obvious locking mechanism. It must open electronically.";
+		"sliding hatch in the containment unit, trimmed with a silicone seal, and plastered with a warning label. There is no handle nor obvious locking mechanism. It must open electronically.";
 	],
 	before [;
+		Unlock:
+			"The access hatch is electronically sealed. The multitool won't be of any use in getting it open.";
 		Open:
 			"There is no obvious way to manipulate the access hatch.";
 	];
@@ -1118,17 +1172,17 @@ with
 	description[;
 		print "KEEP HATCH CLOSED AT ALL TIMES^";
 		print "Specimen temperature fluctuations^";
-		print "+- 10 degrees^";
+		print "  +- 10 degrees^";
 		"will trigger containment unit jetison.";
 	],
 has static;
 
-Object thermometer "digital readout" Lab
+Object thermometer "amber display" Lab
 with
 	name
-		'digital' 'readout' 'thermometer',
+		'amber' 'display' 'thermometer',
 	description [;
-		print "The amber display reads:^";
+		print "The amber display mounted at the top of the glass cylinder reads:^";
 		if (containment_unit.temperature >= FAILSAFE_TEMPERATURE) {
 			"CRITICAL^FAILURE";
 		} else {
@@ -1159,7 +1213,7 @@ with
 			if (containment_unit hasnt open) {
 				give containment_unit open;
 				StartDaemon(containment_unit);
-				"The access hatch at the top of the containment unit slides open with a hiss. The air instantly becomes noticably cooler.^";
+				"The access hatch at the top of the containment unit slides open with a hiss. The air instantly becomes noticably cooler.";
 			} else {
 				give containment_unit ~open;
 				StopDaemon(containment_unit);
@@ -1169,15 +1223,15 @@ with
 	],
 has static;
 
-Object gloves "heavily insultated gloves"
+Object gloves "heavily insulated gloves"
 with
 	name
-		'heavily' 'insulated' 'glove' 'gloves',
+		'cryon' 'heavily' 'insulated' 'glove' 'gloves',
 	article
 		"a pair of",
 	description
 		"These gloves are made of Cryon, a synthetic fiber that can withstand direct (brief!) contact with incredibly cold substances.",
-has pluralname clothing;
+has pluralname clothing concealed;
 
 Object tongs "tongs"
 with
@@ -1206,56 +1260,37 @@ with
 		if (child(self)) print " which grip ", (an)child(self);
 		rtrue;
 	],
-has pluralname container transparent;
-
-Object vial "specimen vial"
-with
-	name
-		'chipped' 'specimen' 'vial',
-	description [;
-		if (self in equipment_storage)
-			print "A large quantity of specimen vials kept in a drawer labelled ~Chipped Vials~. ";
-		"A small, overly-engineered thermos which should keep any specimen perfectly hot or cold for up to 12 hours. Appears to hold about one gram, a peanut-sized volume.";
-	],
-	before [;
-		Open:
-			if (ice in self)
-				StartDaemon(ice);
-		Close:
-			if (ice in self)
-				StopDaemon(ice);
-				ice.melt_stage = 0;
-	],
-	invent [;
-		print "an insulated specimen vial";
-		if (self has open)
-			if (child(self))
-				print " (holding ", (the)child(self), ")";
-		rtrue;
-	]
-has small openable container;
+has pluralname container transparent concealed;
 
 Object drawer "vial storage drawer" Lab
 with
 	name
-		'drawer',
+		'drawer' 'vials',
 	description
-		"It is labelled ~Chipped Vials~ and holds dozens of said vials.",
+		"A storage drawer in the locker labelled ~Chipped Vials~ holds dozens of them.",
 has scenery;
 
 Object stepladder "small stepladder"
 with
 	name
-		'small' 'utility' 'stepladder' 'ladder' 'stairs' 'staircase',
+		'rolling' 'steps' 'small' 'utility' 'stepladder' 'ladder' 'stairs' 'staircase',
 	found_in
 		Lab,
 	next_to
-		main_console,
+		workbench,
 	description[;
 		print "A 1-meter tall fiberglass stepladder on caster wheels sits beside ", (the)self.next_to;
-		if (self.next_to == main_console)
+		if (self.next_to == workbench)
 			print ", within a rectangle on the floor, marked in yellow, vinyl tape";
 		".";
+	],
+	react_before [;
+		Go:
+			if (selected_direction == d_to)
+				<<Exit self>>;
+			if (selected_direction == u_to) {
+				<<Enter self>>;
+			}
 	],
 	before [;
 		PushDir:
@@ -1265,15 +1300,24 @@ with
 		Push:
 			"Push it to where?";
 		Transfer:
+			if (second == ice or containment_base) {
+				second = containment_unit;
+			} else if (second == marking_tape) {
+				second = workbench;
+			}
+			
 			if (actor in self)
 				"You try to shimmy the ladder around, but just can't move it while standing on it.";
 			if (second == self.next_to)
 				"The ladder is already in position there.";
-			if (second ~= main_console or equipment_storage or containment_unit or containment_base)
-				"The ladder won't possibly be of any help near the ", (the) second, ".";
+			if (second ~= workbench or equipment_storage or containment_unit or containment_base) {
+				if (selected_direction == 0)
+					"The ladder won't possibly be of any help near the ", (the) second, ".";
+				"The split-level design of the room makes pushing it around aimlessly frustrating. It could instead be positioned alongside specific features of the room.";
+			}
 			self.next_to = second;
 			print "The caster wheels try to disobey, but the stepladder is now positioned alongside ", (the) second;
-			if (self.next_to == main_console)
+			if (self.next_to == workbench)
 				print ", back in its designated storage area marked on the floor like it had never left";
 			".";
 		Climb, Enter:
@@ -1281,12 +1325,19 @@ with
 				"You're already standing on the stepladder.";
 			move actor to self;
 			update_moved = true;
-			if (self.next_to == main_console)
+			print "You scramble quickly up the stepladder, which is positioned beside ", (the)self.next_to, ".^^";
+			if (self.next_to == workbench)
 				"There's not much to see from this vantage point, just the top of the laborary workstations, and there's nothing interesting there.";
 			if (self.next_to == equipment_storage)
 				"The top of the equipment storage locker is spotless and utterly dust free. HAVOC is nothing if not disciplined.";
 			if (self.next_to == containment_unit or containment_base)
 				"The stepladder provides just enough height to reach the access hatch of the containment unit.";
+		Exit:
+			if (actor notin self)
+				"You're not standing on the ladder.";
+			move actor to Lab;
+			update_moved = true;
+			"You nimbly dismount the short stepladder.";
 	],
 	invent [;
 		print "a rolling stepladder next to ", (the)self.next_to;
@@ -1297,24 +1348,24 @@ has static supporter enterable;
 Object marking_tape "marking tape" Lab
 with
 	name
-		'yellow' 'vinyl' 'marking' 'tape',
+		'designated' 'rectangle' 'area' 'yellow' 'vinyl' 'marking' 'tape',
 	description
-		"Obviously added after the fact by the staff deployed here, it seems to mark an arbitrarily chosen storage area for the stepladder.",
+		"Obviously added after the fact by the staff, it draws a rectangle the size of the stepladder.",
 has scenery;
 
 Object ice "Ice-X" containment_unit
 with
 	name
-		'azure' 'blue' 'crystal' 'crystals' 'ice' 'icex' 'ice-x' 'sample' 'fragile',
+		'azure' 'blue' 'crystal' 'crystals' 'ice' 'icex' 'ice-x' 'sample' 'fragile' 'sparkling' 'shimmering' 'dense' 'mass' 'jewel-like',
 	article
 		"the",
 	melt_stage
 		0,
 	description 
-		"Blue microcrystals of Ice-X which seem to shimmer and glow from an internal energy. Theoretically, they will be quite fragile if exposed to air for more than a few seconds.",
+		"Blue microcrystals of Ice-X which seem to shimmer and glow from an internal energy. They'd make for perfect evidence of HAVOC's work here, if you could smuggle some out. Theoretically, they should be quite fragile if exposed to air for more than a few moments.",
 	before [;
 		Listen:
-			"Coinciding with the shimmer you hear what sounds like the tinkling of glass chimes.";
+			"Coinciding with the shimmer you hear what sounds like the tinkling of fragile glass chimes.";
 		Transfer:
 			if (self in tongs) {
 				give tongs open;
@@ -1325,6 +1376,8 @@ with
 				"There's no safe way to put ", (the)self, " into ", (the)second, ".";
 			if (vial hasnt open)
 				"The vial is closed.";
+			if (self notin tongs)
+				"You haven't extracted a sample from the containment unit.";
 			move ice to vial;
 			update_moved = true;
 			"Luckily, you have deep experience with similar crystaline substances and successfully transfer the fragile Ice-X to the vial.";
@@ -1357,7 +1410,7 @@ with
 			move ice to tongs;
 			update_moved = true;
 			StartDaemon(ice);
-			"The tongs worked well for the task of extracting a fragile crystal from the containment unit.^";
+			"The tongs worked well for the task of extracting a fragile crystal from the containment unit.";
 	],
 	daemon [;
 		if 	((parent(self) ~= containment_unit or vial) ||
@@ -1369,7 +1422,7 @@ with
 			move self to containment_unit;
 			self.melt_stage = 0;
 			update_moved = true;
-			print_ret (The)self, " quickly evaporates into a tiny wisp of pale blue steam from overexposure to the air.";
+			print_ret (The)self, " quickly evaporates in a tiny wisp of pale blue steam.";
 		}
 	],
 	invent [;
@@ -1396,10 +1449,6 @@ with
 			if (self hasnt locked) {
 				print "Quite a bit of equipment here to search through; there's bound to be something useful.^";
 				give self open;
-				rtrue;
-			}
-		Search:
-			if (self has open) {
 				if (self hasnt general) {
 					give self general;
 					move gloves to self;
@@ -1407,6 +1456,13 @@ with
 					move vial to self;
 					update_moved = true;
 				}
+				rtrue;
+			}
+		Search:
+			if (self has open) {
+				give gloves ~concealed;
+				give tongs ~concealed;
+				give vial ~concealed;
 				"Insultated gloves, tongs, specimen vials, and more.";
 			}
 		Receive:
@@ -1436,7 +1492,34 @@ with
 	],
 	invent
 		"an equipment storage locker",
-has container openable locked lockable;
+has container openable transparent locked lockable;
+
+Object vial "specimen vial" 
+with
+	name
+		'chipped' 'specimen' 'vial',
+	description [;
+		if (self in equipment_storage)
+			print "A large quantity of specimen vials kept in a drawer labelled ~Chipped Vials~. ";
+		"A small, overly-engineered thermos which should keep any specimen perfectly hot or cold for up to 12 hours. Appears to hold about one gram, a peanut-sized volume.";
+	],
+	before [;
+		Open:
+			if (ice in self)
+				StartDaemon(ice);
+		Close:
+			if (ice in self)
+				StopDaemon(ice);
+				ice.melt_stage = 0;
+	],
+	invent [;
+		print "an insulated specimen vial";
+		if (self has open)
+			if (child(self))
+				print " (holding ", (the)child(self), ")";
+		rtrue;
+	]
+has small openable container concealed;
 
 Object dolphins "D.O.L.P.H.N. units"
 with
@@ -1622,6 +1705,8 @@ with
 		Remove, Open, Take:
 			"It's screwed on tightly and won't budge.";
 		Close:
+			if (second == multitool)
+				<<Screw screws>>;
 			if (self has general)
 				"You put the access panel back in place, but it just falls off again.";
 			"The access panel is already screwed down in place.";
@@ -1658,10 +1743,18 @@ has static container openable concealed;
 Object multitool "Strike Force multitool"
 with
 	name
-		'tool' 'multitool' 'screwdriver' 'compass' 'knife' 'utility' 'torch' 'soldering' 'lockpick' 'data' 'storage' 'usb' 'pen' 'drive',
+		'tool' 'multitool' 'screwdriver' 'compass' 'knife' 'utility' 'torch' 'soldering' 'lockpick' 'data',
 	before [;
-		PutOn, Give, Drop:
-			if (noun == self) "That's one of Strike Force's most important tools. In a Striker's capable hands it can overcome many of a mission's obstacles. Keep it on your person at all times!";
+		ThrowAt, PutOn, Give, Drop:
+			if (noun == self) "That's one of Strike Force's most important tools. In a Striker's capable hands it can overcome many of a mission's obstacles. Try to keep it on your person at all times, barring emergencies.";
+		! ThrowAt:
+		! 	if (player in stepladder && second == red_button) {
+		! 		move multitool to real_location;
+		! 		update_moved = true;
+		! 		"Thinking outside the box, you invent a new use for the multitool. You grip it throwing star style, between open palm and thumb, much like you've seen Shuriken do in practice. Lining up your shot to the button, you fling!^^And miss. You don't have nearly the ninjutsu skills required to make that happen.";
+		! 	} else {
+		! 		<<Drop self>>;
+		! 	}
 	],
 	description [;
 		print "A standard-issue Strike Force multitool for field operations. Can function as a (near) universal screwdriver, compass, utility knife, soldering torch, lockpick, and can store some 4 million bytes of data. Functions well in all environments";
@@ -2052,7 +2145,6 @@ Extend 'attach' first
 	* noun 'to' noun 'with'/'using'/'by' 'torch' -> Attach
 	* noun 'to' noun 'with'/'using'/'by' 'soldering' 'multitool'/'tool'/'iron'/'torch' -> Attach;
 
-
 [ SolderClarifySub;
 	<<Solder noun noun>>;
 ];
@@ -2084,7 +2176,7 @@ Extend 'attach' first
 		second.crossed = noun;
 		give noun ~general;
 		give second ~general;
-		print (The)noun, " and ", (the)second, " are now cross-fused.";
+		print "A small hyperbaric solder point lights and fuses ", (the)noun, " wire to ", (the)second, " wire with a faint electric sizzle.";
 		CalculatePressure();
 		"";
 	}
@@ -2149,6 +2241,9 @@ Verb 'help'
 ];
 
 Verb 'grab' = 'take';
+Verb 'extract' = 'take';
+Verb 'extricate' = 'take';
+Verb 'withdraw' = 'take';
 
 Extend 'pick' last
 	* noun -> LockPick
@@ -2157,7 +2252,11 @@ Extend 'pick' last
 	* 'open' noun 'with'/'using' noun -> LockPick
 	* 'up' noun 'with'/'using' noun -> PickUp;
 
+Extend 'close' last
+	* noun 'with'/'using' noun -> Close;
+
 Extend 'take' last
+	* 'out'/'a//' noun 'with'/'using' noun -> PickUp
 	* noun 'with'/'using' noun -> PickUp;
 
 [ PushWithSub;
@@ -2252,6 +2351,34 @@ Verb 'disable' 'sabotage'
 	* noun -> Sabotage
 	* topic -> Sabotage;
 
+[ ClimbLadderSub;
+	if (stepladder in real_location) {
+		if (player in stepladder) {
+			if (selected_direction == d_to) {
+				<<Exit stepladder>>;
+			}
+			if (selected_direction == u_to)
+				"You're already standing on top of the stepladder.";
+		} else {
+			if (selected_direction == u_to) {
+				<<Enter stepladder>>;
+			}
+		}
+	} else {
+		if (selected_direction == d_to)
+			"You're not on top of anything from which you could climb down.";
+		if (selected_direction == u_to)
+			"There is nothing worth climbing around here.";
+	}
+	"Perhaps with advanced acrobatics training you could climb in that direction. You make a note to consult with your fitness coach after this mission.";
+];
+
+Extend 'climb' first
+	* noun=ADirection -> ClimbLadder
+	* 'down'/'off' noun -> Exit
+	* 'down'/'off' 'off'/'of'/'from' noun -> Exit
+	* 'down' 'off' 'of'/'from' noun -> Exit;
+
 [ XyzzySub; 
 	print (italic)"Strike Force continues after these messages!^^";
 
@@ -2272,19 +2399,6 @@ Verb 'xyzzy' * -> Xyzzy;
 
 	move multitool to player;
 	move fake_snowdrift to location;
-
-	! this section tests the outcome
-	! give control_box open;
-	! stepladder.next_to = containment_unit;
-	! move tongs to player;
-	! move gloves to player;
-	move vial to player;
-	move ice to vial;
-	! move ice to tongs;
-	! move vial to player;
-	! give vial open;
-	! give outer_airlock_door open;
-
 	update_moved = true;
 	
 	PreviouslyOn();
