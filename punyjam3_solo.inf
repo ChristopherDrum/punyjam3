@@ -32,7 +32,7 @@ Constant OPTIONAL_SL_NO_MOVES;
 Constant DEBUG;
 !Constant DIALECT_US ! Affects OPTIONAL_ENGLISH_NUMBER
 !Constant CUSTOM_ABBREVIATIONS;
-Constant CUSTOM_PLAYER_OBJECT = raven;
+Constant CUSTOM_PLAYER_OBJECT = snowdrift;
 Constant OPTIONAL_NO_DARKNESS;
 ! Constant OPTIONAL_FULL_DIRECTIONS;
 Constant OPTIONAL_SHIP_DIRECTIONS;
@@ -43,7 +43,7 @@ Constant OPTIONAL_EXTENDED_VERBSET;
 !Constant OPTIONAL_FLEXIBLE_INVENTORY;
 !Constant OPTIONAL_LANGUAGE_NUMBER;
 !Constant OPTIONAL_LIST_TOGETHER;
-!Constant OPTIONAL_PRINT_SCENERY_CONTENTS;
+Constant OPTIONAL_PRINT_SCENERY_CONTENTS;
 !Constant OPTIONAL_SCORED;
 !Constant OPTIONAL_FULL_SCORE; ! Comment out NO_SCORE when uncommenting this
 Constant OPTIONAL_SIMPLE_DOORS;
@@ -58,7 +58,7 @@ Constant OPTIONAL_PROVIDE_UNDO;
 ! MAX_CARRIED, SACK_OBJECT,  etc.
 
 Constant DEATH_MENTION_UNDO;
-Constant INITIAL_LOCATION_VALUE = Ocean;
+Constant INITIAL_LOCATION_VALUE = Latrine;
 
 Include "globals.h";
 
@@ -104,14 +104,17 @@ Constant MSG_TAKE_ALREADY_HAVE	1029;
 Constant MSG_TURN_ANIMATE	1030;
 Constant MSG_CUT_NO_USE	1031;
 Constant MSG_PUTON_ITSELF	1032;
+Constant MSG_PUSH_SCENERY	1033;
+Constant MSG_PULL_SCENERY	1034;
+Constant MSG_TURN_SCENERY	1035;
 
 [ italic text;
 #IfV5;
-  style underline;
+	style underline;
 #Endif;
-  print (string)text;
+	print (string)text;
 #IfV5;
-  style roman;
+	style roman;
 #Endif;
 ];
 
@@ -129,7 +132,11 @@ Constant MSG_PUTON_ITSELF	1032;
 		MSG_GO_CANT_GO:
 			CantGoMessage();
 		MSG_UNLOCK_DEFAULT:
-			"The multitool makes quick work of picking open ", (the)noun, ". It's now unlocked.";
+			if (real_location ~= stall) {
+				"The multitool makes quick work of picking open ", (the)noun, ". It's now unlocked.";
+			} else {
+				"You unlock the stall door.";
+			}
 		MSG_WAIT_DEFAULT:
 			"You silently assess the situation.";
 		MSG_YOU_HAVE_WON:
@@ -141,6 +148,9 @@ Constant MSG_PUTON_ITSELF	1032;
 		MSG_TURN_STATIC,
 		MSG_TAKE_STATIC:
 			"You recall the commander's words, ~Leave no trace we were here,~ and decide not to tamper with anything not strictly mission-related.";
+		MSG_PUSH_SCENERY,
+		MSG_PULL_SCENERY,
+		MSG_TURN_SCENERY,
 		MSG_TAKE_SCENERY:
 			"That's not going to advance your mission objective, soldier.";
 		MSG_SEARCH_ON_IT_ISARE,
@@ -553,24 +563,24 @@ with
 	s_to
 		MessHall,
 	e_to [;
-		if (starboard_door hasnt general)
-			<<Examine starboard_door>>;
+		if (starboard_door_c hasnt general)
+			<<Examine starboard_door_c>>;
 		deadflag = 4;
 		"Against your better judgment you slip into the barracks as quietly as possible. From behind, a throat clears to get your attention. It seems a restless soldier was standing just out of sight from the porthole window.";
 	],
 	w_to [;
-		if (port_door hasnt general)
-			<<Examine port_door>>;
+		if (port_door_c hasnt general)
+			<<Examine port_door_c>>;
 		deadflag = 4;
 		"Against your better judgment you slip into the barracks as quietly as possible. From behind, a throat clears to get your attention. It seems a restless soldier was standing just out of sight from the porthole window.";
 	];
 
-Object port_door "port door" CorridorC
+Object port_door_c "port door" CorridorC
 with
 	name
 		'port' 'door' 'porthole' 'p//',
 	description [;
-		give port_door general;
+		give port_door_c general;
 		"Exercising an abundance of caution, you steal a glance through the porthole in the door to see what lies beyond. A dozen or so HAVOC personnel are barracked here. Best not to enter the hornet's nest.";
 	],
 	before [;
@@ -579,12 +589,12 @@ with
 	],
 has openable scenery;
 
-Object starboard_door "starboard door" CorridorC
+Object starboard_door_c "starboard door" CorridorC
 with
 	name
 		'starboard' 'door' 'porthole' 'sb',
 	description [;
-		give starboard_door general;
+		give starboard_door_c general;
 		"You peek through the porthole window in the door. Inside are barracks, and maybe a dozen HAVOC personnel sleeping.";
 	],
 	before [;
@@ -593,7 +603,7 @@ with
 	],
 has scenery openable;
 
-Object CorridorB "Corridor B, Central Module"
+Object CorridorB "Corridor, Central Module"
 with
 	description
 		"The central module's spacious, futuristic design is sandwiched between the industrial, cramped modules at aft and fore. Passageways lead into rooms to port and starboard.",
@@ -641,12 +651,16 @@ with
 		give self general;
 		"Commander Raven knows systems like this better, but it might be an LX array. These detect when microchipped materials cross their threshold. Given the design incongruity and security features, it was likely intended to be connected directly to the foremost dome unit as an anti-theft measure.";
 	],
+	before [;
+		Sabotage:
+			"The sensor array is embedded deep inside the portal frame, under a thick layer of glass. It is impossible to see how or where to even begin to disable the array.";
+	],
 has scenery;
 
 Object corridor
 with
 	name
-		'corridor' 'hall' 'hallway' 'passage' 'passageway',
+		'corridor' 'hall' 'hallway' 'passage' 'portal' 'frame' 'passageway',
 	found_in
 		CorridorC CorridorB CorridorA,
 	before [;
@@ -743,7 +757,7 @@ has scenery;
 Object CorridorA "Corridor, Fore Module"
 with
 	description
-		"The same industrial, submarine-like construction as you saw at the barracks module.The primary dome module sits just fore. Swinging doors lie port and starboard, and aft returns back to the central administrative module.",
+		"The same industrial, cramped construction as you saw at the barracks module. The primary dome module sits just fore. Swinging doors lie port and starboard. Aft will return to the central security and operations module.",
 	n_to
 		Lab,
 	s_to
@@ -752,6 +766,30 @@ with
 		Showers,
 	e_to
 		Latrine;
+
+Object port_door_a "port door" CorridorA
+with
+	name
+		'swinging' 'door' 'port' 'p//',
+	description
+		"A stainless steel swinging door with a porthole that looks into a shower area.",
+	before [;
+		Open:
+			<<Go FAKE_W_OBJ>>;
+	],
+has openable scenery;
+
+Object starboard_door_a "starboard door" CorridorA
+with
+	name
+		'swinging' 'door' 'starboard' 'sb',
+	description
+		"A stainless steel swinging door with a porthole that looks into the latrine.",
+	before [;
+		Open:
+			<<Go FAKE_E_OBJ>>;
+	],
+has scenery openable;
 
 Object Showers "Showers"
 with
@@ -763,13 +801,26 @@ with
 Object shower_decorations "shower decorations" Showers
 with
 	name
-		'showerhead' 'sink' 'mirror' 'toiletries' 'toothbrush' 'razor' 'rubber' 'mat' 'floor' 'flooring',
+		'showerhead' 'sink' 'mirror' 'toiletries' 'toothbrush' 'razor' 'razors' 'shower' 'drainage' 'hole' 'holes' 'rubber' 'mat' 'floor' 'flooring' 'accoutrements',
 	description
-		"A quick scan of the shower accoutrements reveals nothing to help with the mission, and taking anything from here could raise suspicions when HAVOC wakes up.",
-has scenery;
+		"A quick scan of the shower accoutrements reveals nothing to help with the mission, and taking anything from here could raise suspicions when HAVOC personnel awaken.",
+	before [;
+		SwitchOn, SwitchOff:
+			"A running shower would draw the curiousity of anyone headed for the latrine.";
+	],
+has switchable scenery;
 
 Object Latrine "Latrine"
 with
+	latrine_fail [;
+		StopDaemon(self);
+		deadflag = 5;
+		"A startled HAVOC soldier locks eyes with you and drops the reading material he was carrying. Then suddenly screams, ~CODE BLACK! STRIKER ON BASE! REPEAT, STRIKER ON BASE, CODE BLACK!~";
+	],
+	initial [;
+		if (Latrine.safe_to_exit == false)
+			self.latrine_fail();
+	],
 	description [;
 		if (player notin stall) {
 			print "A few stainless steel sinks with personal mirrors, standing urinals in stainless steel, and similarly uninviting stalls occupy the borders of the latrine. A moderately-sized porthole window on the starboard wall offers a view outside.";
@@ -786,19 +837,35 @@ with
 		self.final_sequence = self.final_sequence + 1;
 		self.safe_to_exit = true;
 		switch (self.final_sequence) {
-			1:	self.safe_to_exit = false;
+			1:
+				self.safe_to_exit = false;
 				"Suddenly, the door to the latrine slams open!";
-			2: 	self.safe_to_exit = false;
-				"Rushed, heavy footsteps approach your location.";
-			3:	
-				"The stall door next to you opens and shuts with a bang. You hear the lock being hurredly fidgeted into place.";
+			2:
+				self.safe_to_exit = false;
+				"Rushed, heavy footsteps approach the stalls.";
+			3:
+				self.safe_to_exit = false;
+				"You see bare feet aligned with your stall. He apparently hasn't noticed it's occupied!";
 			4:
-				"The occupied stall is quiet, then trousers fall to the floor around the occupant's ankles.";
+				if (stall_door hasnt locked) {
+					print "The door to your stall is flung wide open!^^";
+					self.latrine_fail();
+				} else {
+					self.safe_to_exit = false;
+					"The door is momentarily jolted by a sudden tug, then a low voice mumbles, ~Ah, sorry.~";
+				}
 			5:
-				"The occupant yelps in sudden shock. ~Are heated toilet seats out of budget?~ he mutters to himself.";
-			6:
-				"A stack of HAVOC training manuals and other reading material are dropped to the floor by his feet.";
+				self.safe_to_exit = false;
+				"The stall door next to you is jiggled and cajoled. It's apparently stuck, ~This...stupid...thing...~";
+			6:	
+				"The neighboring door finally relents, opening and shutting with a bang. You hear the lock being hurredly fidgeted into place.";
 			7:
+				"A stack of HAVOC training manuals and other reading material are dropped to the floor by his feet.";
+			8:
+				"The occupied stall is quiet, then trousers fall to the floor around the occupant's ankles.";
+			9:
+				"The occupant yelps in sudden shock. ~Are heated toilet seats out of budget?~ he mutters to himself.";
+			10:
 				"You hear a quiet sigh of relief.";
 			default:
 				switch (random(4)) {
@@ -809,6 +876,8 @@ with
 				}
 		}
 	],
+	in_to
+		stall_door,
 	w_to [;
 		if (self.final_sequence > 0) {
 			StopDaemon(self);
@@ -821,7 +890,7 @@ with
 Object latrine_window "latrine window" Latrine
 with
 	name
-		'movement' 'latrine' 'starboard' 'porthole' 'window' 'outside',
+		'movement' 'latrine' 'starboard' 'porthole' 'window' 'outside' 'water' 'ocean',
 	description [;
 		print "Navigation lights along the starboard side of the facility illuminate the immediate surroundings near the latrine window.";
 		if (toilet has general) {
@@ -831,36 +900,55 @@ with
 			give self general;
 			"^^In the green light you see a cloud of murky water dissipating and...Oh no, you wish you hadn't seen that. HAVOC is using the ocean as their personal septic tank. Is there any place on earth they haven't defiled with their presence?";
 		}
+		" You see nothing but still waters.";
 	],
 has scenery;
 
-Object stall "stall" Latrine
+Object latrine_decorations "latrine decorations" Latrine
 with
 	name
-		'stall' 'stalls',
+		'stainless' 'steel' 'urinal' 'urinals' 'mirror' 'mirrors' 'sink' 'sinks',
 	description
-		"Three stalls, currently unoccupied (thank goodness!), sit close to the starboard wall.",
-	inside_description
-		"A little cramped, but otherwise a pretty basic stall with a completely standard-issue toilet.",
-	add_to_scope
-		toilet,
-	before [;
-		Enter:
-			if (self hasnt open) <Open self>;
-			print "You choose the most starboard stall and enter.^";
-			move player to self;
-			update_moved = true;
-			if (self has open) <Close self>;
-			<<Look self>>;
-		Exit:
-			if (Latrine.safe_to_exit == false) {
-				deadflag = 5;
-				"A startled HAVOC soldier drops his reading material, assesses the situation, then screams, ~CODE BLACK! INTRUDER! SOUND THE ALARM!~";
-			}
-	],
-has scenery openable open enterable;
+		"Utilitarian, industrial, easy to clean with a hose and a bucket of soapy water.",
+has scenery;
 
-Object toilet "toilet"
+Object stall_door "stall door"
+with
+	name
+		'stall' 'steel' 'door' 'stalls',
+	door_dir
+		(in_to) (out_to),
+	found_in
+		Latrine stall,
+	with_key
+		nothing,
+	description [;
+		if (real_location == Latrine) {
+			"Three unoccupied stalls sit close to the starboard wall, each behind a closed, stainless steel door.";
+		} else {
+			"A little cramped, but otherwise a pretty basic stall with a toilet.";
+		}
+	],
+	before [;
+		Open:
+			if (Latrine.safe_to_exit == false)
+				Latrine.latrine_fail();
+	],
+has scenery door openable lockable;
+
+Object stall "Latrine (in the stall)"
+with
+	initial [;
+		print "You choose the starboard-most stall and enter, closing the door behind you.^";
+		give stall_door ~open;
+	],
+	description [;
+		<<Examine stall_door>>;
+	],
+	out_to
+		stall_door;
+
+Object toilet "toilet" stall
 with
 	name
 		'toilet' 'commode',
@@ -869,10 +957,30 @@ with
 	description [;
 		print "Stainless steel, utilitarian, looks cold. Appears to operate on a vacuum flush mechanism.";
 		if (latrine_window has general)
-			print " If what you saw outside the porthole window is any indication, it flushes directly out to the ocean";
+			print " If what you saw outside the porthole window is any indication, it flushes directly out to the ocean.";
 		""; 
 	],
+	react_before [;
+		Go:
+			if (selected_direction == u_to)
+				<<Exit self>>;
+			if (selected_direction == d_to)
+				<<Enter self>>;
+		Exit:
+			if (player in self) {
+				move player to stall;
+				update_moved = true;
+				"You gladly get up off the toilet.";
+			} else {
+				if (verb_word == 'stand')
+					"You're standing at your full height already.";
+			}
+	],
 	before [;
+		Enter:
+			move player to self;
+			update_moved = true;
+			"With great reluctance, you sit on the cold stall.";
 		Receive:
 			if (noun hasnt small)
 				"That would only clog and overflow the toilet.";
@@ -892,7 +1000,7 @@ with
 			}
 			". BA-WOOSH!";
 	],
-has static container openable;
+has static container openable concealed;
 
 Object Lab "Main Research Laboratory"
 with
@@ -941,7 +1049,7 @@ with
 	name
 		'cryoflux' 'inducer',
 	description
-		"If only you could get this machine out of HAVOC's lab and into your own! There are  theoretical ice structures that an inducer could coax out of even basic H20. Although the ~theoretical~ seems to have been made real here, judging from the central containment unit's contents.",
+		"If only you could get this machine out of HAVOC's lab and into your own! There are theoretical ice structures that an inducer could coax out of even basic H20. Although the ~theoretical~ seems to have been made real here, judging from the central containment unit's contents.",
 	before [;
 		SwitchOn, SwitchOff:
 			"There is no simple on/off switch for a machine this advanced. It would require intimate knowledge of its workings to activate its elaborate power cycling routine.";
@@ -1407,7 +1515,7 @@ has scenery door openable lockable locked;
 Object airlock_wheel "airlock wheel" Airlock
 with
 	name
-		'large' 'door' 'wheel',
+		'large' 'wheel',
 	description
 		"If the pressure is balanced, turning the wheel is enough to disengage the locks and open the door manually.",
 	before [;
@@ -1713,7 +1821,7 @@ with	name 'light' 'turquoise',
 		short_name "light turquoise",
 		pressure -10;
 
-Wire dark_turquoise_wire  "dark turquoise wire" control_box
+Wire dark_turquoise_wire "dark turquoise wire" control_box
 with	name 'dark' 'turquoise',
 		short_name "dark turquoise",
 		pressure 10;
@@ -1894,6 +2002,8 @@ with
 has concealed;
 
 [ SimpleUnlockSub;
+	if (noun == stall_door)
+		<<Unlock stall_door>>;
 	"HAVOC has been known to make very dumb mistakes before, but in general their security is tight enough to require a lockpick at minimum.";
 ];
 
@@ -1998,7 +2108,7 @@ Verb 'n//' 'north' 's//' 'south' 'e//' 'east' 'w//' 'west' 'nw' 'northwest' 'ne'
 	* -> DirectionPrompt;
 
 [ UseExplainSub;
-	"Being a member of the elite Strike Force, precision of words is as important as precision of actions. (try to come up with a more specific verb to apply to the situation)";
+	"Being a member of the elite Strike Force, precision of words is as important as precision of actions.";
 ];
 
 Verb 'use' 'utilize'
@@ -2105,6 +2215,43 @@ Verb 'shoot' 'fire'
 	* -> Shoot
 	* noun -> Shoot;
 
+[ HygieneSub;
+	if (real_location == Showers or Latrine)
+		"Even if the situation were absolutely safe, there's no way you'd be caught dead using HAVOC's hygiene products on yourself.";
+	if (noun == player || noun in player)
+		"There will be time for that when you get back to home base.";
+	<<Rub noun>>;
+];
+
+Verb 'shave' 'brush' 'floss' 'shower' 'bathe' 'wash'
+	* -> Hygiene
+	* noun -> Hygiene
+	* topic -> Hygiene;
+
+Extend only 'clean' replace
+	* noun -> Hygiene;
+
+[ SpecialLockSub;
+	if (noun == stall_door)
+		<<Lock stall_door>>;
+];
+
+Extend 'lock' last
+	* noun -> SpecialLock;
+
+[ SabotageSub;
+	if (noun) {
+		if (noun ofclass Striker)
+			"That's borderline treason, soldier.";
+		"There's no such simplistic way to disable ", (the)noun,". You'll need to work out a more exact methodology.";
+	}
+	"You take a moment to puzzle out how to disable it, but nothing comes to mind.";
+];
+
+Verb 'disable' 'sabotage'
+	* noun -> Sabotage
+	* topic -> Sabotage;
+
 [ XyzzySub; 
 	print (italic)"Strike Force continues after these messages!^^";
 
@@ -2131,11 +2278,12 @@ Verb 'xyzzy' * -> Xyzzy;
 	! stepladder.next_to = containment_unit;
 	! move tongs to player;
 	! move gloves to player;
-	! move vial to player;
+	move vial to player;
+	move ice to vial;
 	! move ice to tongs;
 	! move vial to player;
 	! give vial open;
-	give outer_airlock_door open;
+	! give outer_airlock_door open;
 
 	update_moved = true;
 	
