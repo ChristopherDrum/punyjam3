@@ -29,7 +29,7 @@ Constant NO_SCORE = 0;
 Constant OPTIONAL_SL_NO_MOVES;
 
 ! Uncomment to add optional features to PunyInform
-! Constant DEBUG;
+Constant DEBUG;
 !Constant DIALECT_US ! Affects OPTIONAL_ENGLISH_NUMBER
 !Constant CUSTOM_ABBREVIATIONS;
 Constant CUSTOM_PLAYER_OBJECT = raven;
@@ -1524,7 +1524,7 @@ has small openable container concealed;
 Object dolphins "D.O.L.P.H.N. units"
 with
 	name
-		'propulsion' 'unit' 'dolphn' 'dolphin',
+		'propulsion' 'units' 'unit' 'dolphn' 'dolphin',
 	article
 		"your team's",
 	found_in
@@ -1541,6 +1541,8 @@ Object magnetic_tether "magnetic tether"
 with
 	name
 		'magnetic' 'tether',
+	found_in
+		Ocean,
 	description
 		"These magnetic tethers are the only thing keeping the D.O.L.P.H.N. units from being swept away by cross currents during the mission.",
 has scenery;
@@ -2329,6 +2331,19 @@ Verb 'shave' 'brush' 'floss' 'shower' 'bathe' 'wash'
 
 Extend only 'clean' replace
 	* noun -> Hygiene;
+
+[ CutOrAttackSub;
+	if (noun ofclass Wire && second == multitool)
+		<<Cut noun>>;
+	if (noun ofclass Striker)
+		<<Cut noun>>;
+	if (parent(second) == player)
+		<<Attack noun second>>;
+	"You'd need many more years of combat training to cut ", (an)noun, " with ", (an)second, ".";
+];
+
+Extend 'cut' first
+	* noun 'with'/'using' noun ->CutOrAttack;
 
 [ SpecialLockSub;
 	if (noun == stall_door)
