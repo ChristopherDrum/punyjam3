@@ -355,3 +355,15 @@ Extend 'climb' first
 	print_ret (italic)"^^We now return to Strike Force!";
 ];
 Verb 'xyzzy' * -> Xyzzy;
+
+#IfDef DEBUG;
+	Verb 'endgame'
+		*	-> EndGame;
+
+	[ EndGameSub r_ok s_ok; 
+		r_ok = RavenCheck();
+		s_ok = SnowblindCheck();
+		print "Raven is: ", r_ok, "^";
+		print "Snowblind is: ", s_ok, "^";
+	];
+#EndIf;

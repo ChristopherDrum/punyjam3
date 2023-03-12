@@ -30,6 +30,7 @@ Constant OPTIONAL_SL_NO_MOVES;
 
 ! Uncomment to add optional features to PunyInform
 Constant DEBUG;
+
 !Constant DIALECT_US ! Affects OPTIONAL_ENGLISH_NUMBER
 !Constant CUSTOM_ABBREVIATIONS;
 Constant CUSTOM_PLAYER_OBJECT = raven;
@@ -58,7 +59,7 @@ Constant OPTIONAL_PROVIDE_UNDO;
 ! MAX_CARRIED, SACK_OBJECT,  etc.
 
 Constant DEATH_MENTION_UNDO;
-Constant INITIAL_LOCATION_VALUE = Airlock;
+Constant INITIAL_LOCATION_VALUE = Ocean;
 
 Include "globals.h";
 
@@ -117,8 +118,11 @@ Include "puny.h";
 	PressAnyKey();
 ];
 
-[ RavenCheck ok;
+[ RavenCheck ok w;
 	ok = (access_panel hasnt general);
+	objectloop (w ofclass Wire) {
+		ok = ok && (w hasnt general) && (w.crossed == nothing);
+	}
 	return ok; 
 ];
 
