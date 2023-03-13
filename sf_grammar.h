@@ -92,21 +92,17 @@ Extend 'attach' first
 	if (noun == second) {
 		give noun ~general;
 		noun.crossed = nothing;
-		print (The)noun, " is fused back into one wire.";
-		CalculatePressure();
+		print (The)noun, " is fused back into one.";
+		voltmeter.update_voltage();
 		"";
 	}
 	if (noun ~= second) {
-		if (green_wire == noun or second) {
-			deadflag = 3;
-			"Years of field expertise scream at you to leave the green wire alone. Nevertheless you push forward with your questionable plan to tamper further with its voltage.";
-		}
 		noun.crossed = second;
 		second.crossed = noun;
 		give noun ~general;
 		give second ~general;
-		print "A small hyperbaric solder point lights and fuses ", (the)noun, " wire to ", (the)second, " wire with a faint electric sizzle.";
-		CalculatePressure();
+		print "A small hyperbaric solder point lights and fuses ", (the)noun, " to ", (the)second, " with a faint electric sizzle.^";
+		voltmeter.update_voltage();
 		"";
 	}
 	"UNEXPECTED: Some edge case fell through to here!";

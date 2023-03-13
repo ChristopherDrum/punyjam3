@@ -148,5 +148,6 @@ Constant MSG_STRONG_DEFAULT	1037;
 
 		7: print "Complete Mission Failure!";
 
+		8: print "You triggered the airlock alarm!";
 	}
 ];

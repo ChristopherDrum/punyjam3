@@ -119,7 +119,8 @@ Include "puny.h";
 ];
 
 [ RavenCheck ok w;
-	ok = (access_panel hasnt general);
+	ok = 	((access_panel hasnt general) && 
+			(outer_airlock_door has ~open));
 	objectloop (w ofclass Wire) {
 		ok = ok && (w hasnt general) && (w.crossed == nothing);
 	}
@@ -138,10 +139,8 @@ Include "puny.h";
 [ Coda rok sok;
 	@erase_window 0;
 	deadflag = 2;
-	print "Snowdrift slips into the airlock, ~Mission accomplished, commander. Recommend a hasty retreat.~^^
-	Raven nods in agreement, ~Good work, soldier. I knew it was a wise bet bringing you along. Let's get out of here.~^^
-	The two hurredly redon their pressure gear, flood the airlock, and exit back out into the ocean and their waiting D.O.L.P.H.N. units.^^
-	With stealth and care, the vial containing the Ice-X sample is retrieved and the team speeds off toward their exfiltration point, swiftly disappearing into the dark, arctic waters.";
+
+	print "Raven and Snowdrift mount their respective D.O.L.P.H.N. units and beat a speedy retreat. With stealth and care, the vial containing the Ice-X sample is retrieved and they speed off toward their exfiltration point, swiftly disappearing into the dark, arctic waters.";
 	rok = RavenCheck();
 	sok = SnowblindCheck();
 
@@ -163,10 +162,10 @@ Include "puny.h";
 	print "^^^";
 	print (italic)"On the next episode of Strike Force!^";
 	if (deadflag == 2) {
-		print "Having gained an important tactical advantage with their flawless raid on the arctic research station, Strike Force pushes back against HAVOC's plans as Master Bedlam looks to harvest a rare gaseous compound at the top of Mount Everest in part 4 ~Summit of Doom!~";
+		print "Having gained an important tactical advantage with their flawless raid on the arctic research station, Strike Force pushes back against HAVOC's plans as Master Bedlam looks to harvest a rare gaseous compound at the top of Mount Everest. Tune in tomorrow for part 4 ~Summit of Doom!~";
 
 	} else {
-		print "Having quickly detected the infiltration of their arctic base, HAVOC gains the upper hand, swiftly bringing the world to its knees, holding The Great Wall of China ransom for $100 billion in part 4 ~The Destruction of Strike Force!~";
+		print "Having quickly detected the infiltration of their arctic base, HAVOC gains the upper hand, swiftly bringing the world to its knees, holding The Great Wall of China ransom for $100 billion. Tune in tomorrow for the series finale, ~The Destruction of Strike Force!~";
 	}
 ];
 
@@ -183,7 +182,9 @@ Object Ocean "Ocean, Outside the Airlock"
 with
 	initial [;
 		print (italic)"[You now control Raven, field commander and security expert.]^";
-		"You turn to Snowdrift, ~OK, remember our mission: get in, get evidence, get out. Leave no trace we were here.~^^Snowdrift asks, ~What kind of evidence, commander?~^^~Remains to be seen. HAVOC has a penchant for the dramatic, so I suspect you'll know it when you see it. First thing's first: I need to get that airlock door open for you.~^";
+		if (toilet hasnt general) {
+			"You turn to Snowdrift, ~OK, remember our mission: get in, get evidence, get out. Leave no trace we were here.~^^Snowdrift asks, ~What kind of evidence, commander?~^^~Remains to be seen. HAVOC has a penchant for the dramatic, so I suspect you'll know it when you see it. First thing's first: I need to get that airlock door open for you.~^";
+		}
 	],
 	description [;
 		print "You're outside HAVOC's secret research base in the Arctic Ocean, some 500 fathoms below. Navigation lights decorate the facility, dimly illuminating the surrounding darkness. ";
@@ -222,13 +223,20 @@ with
 			update_moved = true;
 			give outer_airlock_door ~open;
 			print "You and Snowdrift move swiftly into the airlock, sealing the door behind. As chamber pressure is re-established, yellow lights flash silently, sure to draw attention to your presence!^^You hover a fist over an emergency release button, ready to punch it. However, your luck holds and the procedure finishes without incident. You quickly stash your pressure suits on available hooks.^^
-			~OK, Snowdrift, you're up. To keep our chance of being detected as low as possible you have to go it alone. Once you rendezvous with me here we end the mission; no second chances,~ you say.^^In quiet unison you chant, ~Strike hard. Strike fast. Strike Force.~^^";
+			~OK, Snowdrift, you're up. If two of us sneak around we double our chance of being caught, so you'll have to go it alone. Once you rendezvous with me here we leave; no second chances,~ you say.^^In quiet unison you chant, ~Strike hard. Strike fast. Strike Force.~^^";
 			print_ret (italic)"[You now control Snowdrift, arctic specialist and expert in all things ice and snow.]^";
 		}
 
 		if (toilet has general) {
-			deadflag = 2;
-			Coda();
+			move raven to Ocean;
+			move fake_snowdrift to Ocean;
+			remove fake_raven;
+			remove snowdrift;
+			player = raven;
+			move multitool to raven;
+			update_moved = true;
+			give outer_airlock_door open;
+			print "You slip back into the airlock, ~Mission accomplished, commander. Recommend a hasty retreat.~^^Raven nods in agreement, ~Good work, soldier. I knew it was a wise bet bringing you along. Let's get out of here.~^^The two of you hurredly redon your pressure gear, flood the airlock, and exit back out into the ocean and your waiting D.O.L.P.H.N. units.^^";
 		} else {
 			deadflag = 7;
 		}
@@ -1439,7 +1447,9 @@ with
 		"Affectionately known as a 'dolphin' (D.O.L.P.H.N. : Deep Oceanic Lifeline and Propulsive Hydro-Navigator), this one-man propulsion unit developed by and for Strike Force has a tempered glass bullet-dome front with motorcycle-style handles for steering and throttle. It drags the rider through water much faster than swimming.",
 	before [;
 		Enter:
-			"You've an internationally critical mission to perform before leaving, commander.";
+			if (toilet hasnt general)
+				"You've an internationally critical mission to perform before leaving, commander.";
+			Coda();
 	],
 has enterable scenery;
 
@@ -1467,16 +1477,11 @@ with
 		Pull, Open:
 			if (real_location == Ocean) {
 				if (self has locked) "The handle is in the closed position.";
-				if (pressure_gauge.pressure + pressure_gauge.adjustment ~= 0)
-					"Though the door is unlocked, the pressure differential between the sea and the inner airlock is too great to open the door.";
+				if (voltmeter.bypassed == false)
+					"The door will not budge until the airlock security system is successfully bypassed.";
 				if (self has open) "The airlock door is already open.";
 				give self open;
-				print "The door swings open, ";
-				if (green_wire hasnt general) {
-					deadflag = 3;
-					"triggering the alarm system!";
-				}
-				"silently and easily.";
+				"The door swings open, silently and easily.";
 			} else {
 				"Raven gives you a stern look, ~Soldier, I'm not sure what you're thinking right now. Your mission lies inside the facility, not out there.~";
 			}
@@ -1489,7 +1494,7 @@ with
 				print "Tightly fit into the bulkhead, the airlock door is engineered to enough precision to make it difficult to discern where the door ends and the hull of the facility begins. ";
 			}
 			print "^^A titanium panel to the left of the door is ";
-			if (control_box has open) {
+			if (access_panel has general) {
 				print "floating in the water, attached to a control box by a bundle of colorful wires";
 			} else {
 				print "embedded into the steel hull";
@@ -1555,7 +1560,7 @@ with
 		Ocean,
 	before [;
 		Turn:
-			if (red_wire.crossed == black_wire) {
+			if (voltmeter.bypassed == true) {
 				if (outer_airlock_door has locked) {
 					give outer_airlock_door ~locked;
 					"The handle rotates smoothly. The airlock door should be openable now.";
@@ -1601,11 +1606,11 @@ with
 	name
 		'hanging' 'dangling' 'titanium' 'access' 'panel' 'plate',
 	add_to_scope
-		screws control_box wire_bundle,
+		screws control_box ribbon_cable,
 	description [;
 		if (self hasnt general)
 			"A flat square of metal with rounded corners, screwed into the surface of the facility's bulkhead with four stainless steel socket-headed screws.";
-		"A flat square of metal with rounded corners, hanging from an inset control box by a colorful bundle of wires.";
+		"A flat square of metal with rounded corners, hanging from an inset control box by a colorful bundle of wires. It appears to be a key card reader for a Q13 security system.";
 	],
 	before [;
 		Remove, Open, Take:
@@ -1628,6 +1633,10 @@ with
 	article
 		"an",
 	before [;
+		if (self has concealed) {
+			if (self hasnt general)
+				"There isn't one of those around to do that to.";
+		}
 		Open:
 			if (self has concealed)
 				"The only way to open the control box would be by removing the access panel.";
@@ -1638,13 +1647,14 @@ with
 			"The control box itself doesn't contain any screws, though its access panel does.";
 	],
 	description [;
-		if (self has concealed)
+		if (self has concealed) {
+			if (self hasnt general)
+				"You scan the area but fail to find anything like that.";
 			"The control box is covered by its access panel which is screwed down to the bulkhead.";
+		}
 		"A book-sized compartment in the hull of the facility, which houses a small gauge. A bundle of colored wires pours from it, connected to a dangling access panel.";
 	],
-	when_open
-,
-has static container openable concealed;
+has static container concealed;
 
 Object multitool "Strike Force multitool"
 with
@@ -1701,9 +1711,10 @@ with
 				if (verb_word == 'tighten' or 'close' or 'replace')
 					"The screws are as tight as they can get.";
 				give access_panel general;
-				give control_box open;
 				give control_box ~concealed;
-				give wire_bundle ~concealed;
+				give control_box general;
+				give ribbon_cable ~concealed;
+				give voltmeter ~concealed;
 				objectloop (w ofclass Wire)
 					give w ~concealed;
 				"You loosen the captive screws with the multitool and the plate comes away from the hull, revealing a control box. The plate floats attached to the box by a colorful bundle of wires.";
@@ -1711,9 +1722,9 @@ with
 				if (verb_word == 'loosen' or 'open' or 'remove')
 					"The access panel screws are already disengaged from the bulkhead.";
 				give access_panel ~general;
-				give control_box ~open;
 				give control_box concealed;
-				give wire_bundle concealed;
+				give ribbon_cable concealed;
+				give voltmeter concealed;
 				objectloop (w ofclass Wire)
 					give w concealed;
 				"You tighten the captive screws, firmly reattaching the access panel to the control box, leaving no visible sign of tampering.";
@@ -1721,37 +1732,34 @@ with
 	],
 has scenery removable;
 
-Object wire_bundle "bundle of wires" control_box
+Object ribbon_cable "colorful ribbon cable" control_box
 with
 	name
 		'multicolored' 'mutihued' 'rainbow-colored' 'colorful' 'ribbon' 'bundle' 'cable' 'wires' 'rainbow',
 	before [;
-		Take, Remove: "Removing the cable outright would likely trigger a systems failure alarm. HAVOC forces would swarm you in seconds.";
+		Take, Remove: "Removing the cable outright will trigger a system failure alarm. HAVOC forces would swarm you in seconds.";
 	],
 	description [w;
-		if (self has concealed)
-			"The wires are in the control box which is covered by an access panel which is screwed to the bulkhead.";
+		if (self has concealed) {
+			if (self hasnt general)
+				"There are no visible wires in your vicinity.";
+			"The wires are hidden inside the control box which is covered by its access panel.";
+		}
 		if (self hasnt general) {
 			give self general;
-			print "A cable of 13 thick wires each a different color. You've hotwired enough security locks to know the red and black wires will unlock the door, if you reverse their polarity. The green wire needs care; a simple cut should disable the alarm.^^
-
-			The multihued wires in light/dark pairs are trickier. Fathom, Strike Force's deep sea expert, taught you they balance airlock pressure against sea pressure, to allow the door to physically open. Cutting one will apply a pressure differential, as measured by the pressure gauge.^^";
+			print "A ribbon cable of eight colored wires connects a Q13 key card system to the airlock door. Luckily, this system has a security flaw which can be exploited in a careful regulation of the voltage in a rising - falling - rising pattern.^^
+			Phase 1, initialize the voltage to between 95-100v; no higher. Once set, the system will become fairly sensitive. Phase 2, LOWER the voltage by 9-10v MAX; don't exceed phase 1 voltage. At this point, the system will become highly sensitive. Finally, quickly RETURN to phase 1 voltage.^^";
 		} else {
-			print "A bundle of wires. Reversing polarity on the red and black will unlock the door, and cutting green should disable any alarm. Cutting any other will apply that wire's pressure differential to the airlock, as measured by the gauge.^^";
+			print "A ribbon cable that controls the security system for the airlock door. Its known security flaw can be exploited in three phases.^^
+			Phase 1: Initialize to 95-100v MAX; do not exceed 100v.^
+			Phase 2: LOWER by 9-10v MAX; never exceed Phase 1 voltage.^
+			Phase 3: RETURN to phase 1 voltage.^^";
 		}
 		print "The current state of the wires:";
 		objectloop (w ofclass Wire) {
-			print "^    ", (string)w.short_name;
-			if (w.pressure ~= 0) {
-				print " (", w.pressure, " bars)";
-			} else {
-				if (w ~= green_wire) {
-					print " (lock)";
-				} else {
-					print " (alarm)";
-				}
-			}
-			print " : ";
+			print "^    ", (string)w.short_name, " (";
+			if (w.voltage > 0) print "+";
+			print w.voltage, "v) : ";
 			if (w.crossed) {
 				print "crossed with ", (the)w.crossed;
 			} else if (w has general) {
@@ -1771,11 +1779,17 @@ with
 		'wire',
 	article
 		"the",
-	pressure !default to 0, where 0 means neutral
-		0,
+	calculated
+		false,
 	crossed
 		nothing,
+	voltage
+		0,
 	before [;
+		if (self has concealed) {
+			if (ribbon_cable hasnt general)
+				"You don't see a ", (name)self, " anywhere in the vicinity.";
+		}
 		Cut:
 			if (self has general) "That wire is already cut.";
 			if (self.crossed ~= nothing) {
@@ -1784,14 +1798,17 @@ with
 				self.crossed = nothing;
 			}
 			give self general;
-			print "With swift, practiced care, ", (the)self, " wire is snipped cleanly. ";
-			CalculatePressure();
+			print "With swift, practiced care, ", (the)self, " is snipped cleanly. ";
+			if (voltmeter.bypassed == false)
+				voltmeter.update_voltage();
 			"";
 	],
 	description [;
 		if (self has concealed)
-			print_ret (The)self, " wire is part of a larger bundle of wires which is secured in the control box behind the access panel.";
-		print (The)self, " wire which controls ", self.pressure, " bars of pressure is currently ";
+			print_ret (The)self, " is part of a ribbon cable which is secured in the control box behind the access panel.";
+		print (The)self, ", which regulates ";
+		if (self.voltage > 0) print "+";
+		print self.voltage, " volts, is ";
 		if (self has general) {
 			print "severed";
 		} else {
@@ -1805,131 +1822,172 @@ with
 	],
 has static concealed;
 
-Wire red_wire "red wire" control_box
-with	name 'red',
-		short_name "red";
-
-Wire black_wire "black wire" control_box
-with	name 'black',
-		short_name "black";
-
-Wire green_wire "green wire" control_box
-with	name 'green',
-		short_name "green";
-
 Wire light_pink_wire "light pink wire" control_box
 with	name 'light' 'pink',
-		short_name "light pink",
-		pressure -5;
+		short_name "light pink wire",
+		voltage -1;
 
 Wire dark_pink_wire "dark pink wire" control_box
 with	name 'dark' 'pink',
-		short_name "dark pink",
-		pressure 5;
+		short_name "dark pink wire",
+		voltage 1;
 
 Wire light_turquoise_wire "light turquoise wire" control_box
 with	name 'light' 'turquoise',
-		short_name "light turquoise",
-		pressure -10;
+		short_name "light turquoise wire",
+		voltage -3;
 
 Wire dark_turquoise_wire "dark turquoise wire" control_box
 with	name 'dark' 'turquoise',
-		short_name "dark turquoise",
-		pressure 10;
+		short_name "dark turquoise wire",
+		voltage 3;
 
 Wire light_orange_wire "light orange wire" control_box
 with	name 'light' 'orange',
-		short_name "light orange",
-		pressure -30;
+		short_name "light orange wire",
+		voltage -7;
 
 Wire dark_orange_wire "dark orange wire" control_box
 with	name 'dark' 'orange',
-		short_name "dark orange",
-		pressure 30;
+		short_name "dark orange wire",
+		voltage 7;
 
 Wire light_purple_wire "light purple wire" control_box
 with	name 'light' 'purple',
-		short_name "light purple",
-		pressure -50;
+		short_name "light purple wire",
+		voltage -13;
 
 Wire dark_purple_wire "dark purple wire" control_box
 with	name 'dark' 'purple',
-		short_name "dark purple",
-		pressure 50;
+		short_name "dark purple wire",
+		voltage 13;
 
-Wire light_grey_wire "light grey wire" control_box
-with	name 'light' 'grey',
-		short_name "light grey",
-		pressure -100;
-
-Wire dark_grey_wire "dark grey wire" control_box
-with	name 'dark' 'grey',
-		short_name "dark grey",
-		pressure 100;
-
-[ CalculatePressure w safe old_adj new_adj;
-	old_adj = pressure_gauge.adjustment;
-	new_adj = 0;
-	safe = true;
+[ CalculateVoltage w v;
+	! print "^Calculating the total voltage...^";
+	v = 0;
 	objectloop (w ofclass Wire) {
-		if (w.pressure ~= 0) {
-			if (w.crossed ~= nothing) {
-				safe = false;
-				if (pressure_gauge.danger == false) {
-					pressure_gauge.danger = true;
+		! print "  ", (name)w, "^";
+		if (w hasnt general) {
+			! print "    isn't cut^";
+			if (w.calculated == false) { !prevent against double-counting
+				! print "    hasn't been calculated yet^";
+				w.calculated = true;
+				if (w.crossed == nothing) {
+					! print "    isn't crossed with anything^";
+					if (w provides voltage) {
+						! print "    carries ", w.voltage, " volts^";
+						v = v + w.voltage;
+					} else {
+						print "!!!", (name)w, " has no voltage?!?!^";
+					}
+				} else {
+					! print "    is crossed with ", (name)w.crossed, "^";
+					v = v + (w.voltage * w.crossed.voltage);
+					w.crossed.calculated = true;
 				}
-			} else if (w has general) {
-				new_adj = new_adj + w.pressure;
 			}
-		}
-	}
-	pressure_gauge.adjustment = new_adj;
-	if (safe) {
-		if (pressure_gauge.danger == true) {
-			print " The needle settles down into a steady reading again.";
 		} else {
-			if (old_adj ~= new_adj) {
-				print " The needle on the pressure gauge adjusts itself in accordance with the wire manipulation.";
-			}
+			! print "    is cut^";
 		}
-		pressure_gauge.danger = false;
-	} else {
-		print " The needle on the attached gauge jumps around wildly!";
 	}
+
+	!reset the calculated property for next time
+	objectloop (w ofclass Wire)
+		w.calculated = false;
+
+	print "Returning: ", v, "^";
+	return v;
 ];
 
-Object pressure_gauge "pressure gauge" control_box
-	with
-		name
-			'pressure' 'gauge',
-		pressure
-			125,
-		adjustment
-			0,
-		danger
-			false,
-		description [;
-			if (self.danger) {
-				"The pressure needle is jumping around wildly; there must be a crossed pressure wire! You've go to get this sorted out and fast!";
+Object voltmeter "voltmeter" control_box
+with
+	name
+		'voltmeter' 'gauge',
+	total_voltage
+		0,
+	phase
+		1,
+	min_voltage
+		-150,
+	max_voltage
+		100,
+	bypassed
+		false,
+	description [;
+		if (self has concealed) {
+			if (self hasnt general)
+				"You don't see a ", (name)self, " anywhere in the vicinity.";
+			"The voltmeter is locked away behind the access panel.";
+		}
+		if (self hasnt general) {
+			give self general;
+			print "A squarish voltmeter gauge with demarcations running 180 degrees, ranging -150v to +150v. Its registered voltage is the summation of every connected wire's voltage, or the multiple of any two wires which have been cross-fused. ";
+		} else {
+			print "A voltmeter that registers the summation of all connected wires, or the multiple of two cross-fused wires. ";
+		}
+		print "A needle indicates ";
+		if (self.total_voltage > 0) print "+";
+		print self.total_voltage, " volts. ";
+		if (self.bypassed == true) {
+			"^^The security exploit was successful. The airlock door will open now.";
+		} else {
+			"^^Between the lock and the sea pressure, the airlock door will never open until the security is bypassed.";
+		}
+	],
+	update_voltage[ tv max min;
+		self.total_voltage = CalculateVoltage();
+		tv = self.total_voltage;
+		max = self.max_voltage;
+		min = self.min_voltage;
+
+		if (self.phase == 1) {
+			if (tv > max) {
+				deadflag = 8;
+			} else if (tv >= max - 5) {
+				self.phase = 2;
+				self.max_voltage = tv;
+				self.min_voltage = tv-10;
+				"With the voltmeter at ", tv, "volts, that sets you up nicely for phase 2: drop the voltage by 9 or 10 volts.";
 			} else {
-				if (self hasnt general) {
-					give self general;
-					print "A small, round pressure gauge that measures pressure differential between the outer sea and the inner airlock. Demarcations range from -500, to 0 at the top, to +500 bars. ";
-				}
-				print "The gauge reads ";
-				print (self.pressure + self.adjustment), " bars. ";
-				if (self.pressure + self.adjustment == 0) {
-					"^^The pressure is equalized. Assuming security measures have been circumvented, the airlock door should open without trouble.";
-				} else {
-					"^^The airlock door will be impossible to open until the pressure is equalized.";
-				}
+				print "The voltmeter adjusts and now reads ";
+				if (tv > 0) print "+";
+				print tv, "v.";
 			}
-		],
+
+		} else if (self.phase == 2) {
+			if (tv > max) {
+				deadflag = 8;
+			} else if (tv < min) {
+				deadflag = 8;
+			} else if (tv <= max - 8) {
+				self.phase = 3;
+				"The voltmeter reads ", tv, " volts, which means you just have one more thing to do to pop this lock. Return to ", max, " volts, as you set in phase 1.";
+			} else {
+				print "The voltmeter adjusts and now reads ";
+				if (tv > 0) print "+";
+				print tv, "v.";
+			}
+
+		} else if (self.phase == 3) {
+			if (tv > max) {
+				deadflag = 8;
+			} else if (tv < min) {
+				deadflag = 8;
+			} else if (tv == max) {
+				voltmeter.bypassed = true;
+			} else {
+				print "The voltmeter adjusts and now reads ";
+				if (tv > 0) print "+";
+				print tv, "v.";
+			}
+
+		} else {
+			print "Voltmeter phase is ", self.phase, "?!?!";
+		}
+	],
 has static;
 
 Class Striker
-with 	add_to_scope 
-			multitool,
 has proper animate;
 
 Striker raven "Raven"
