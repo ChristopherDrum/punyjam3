@@ -1863,27 +1863,30 @@ with	name 'dark' 'purple',
 		voltage 13;
 
 [ CalculateVoltage w v;
-	! print "^Calculating the total voltage...^";
+	print "^Calculating the total voltage...^";
 	v = 0;
 	objectloop (w ofclass Wire) {
-		! print "  ", (name)w, "^";
+		print "  ", (name)w, "^";
 		if (w hasnt general) {
 			! print "    isn't cut^";
 			if (w.calculated == false) { !prevent against double-counting
-				! print "    hasn't been calculated yet^";
+				print "    hasn't been calculated yet^";
 				w.calculated = true;
 				if (w.crossed == nothing) {
 					! print "    isn't crossed with anything^";
 					if (w provides voltage) {
-						! print "    carries ", w.voltage, " volts^";
 						v = v + w.voltage;
+						print "    adding ", w.voltage, "^";
+						print "      total is: ", v, "^";
 					} else {
 						print "!!!", (name)w, " has no voltage?!?!^";
 					}
 				} else {
-					! print "    is crossed with ", (name)w.crossed, "^";
+					print "    is crossed with ", (name)w.crossed, "^";
 					v = v + (w.voltage * w.crossed.voltage);
 					w.crossed.calculated = true;
+					print "    adding ", (w.voltage * w.crossed.voltage), "^";
+					print "      total is: ", v, "^";
 				}
 			}
 		} else {
@@ -1961,7 +1964,7 @@ with
 				deadflag = 8;
 			} else if (tv <= max - 8) {
 				self.phase = 3;
-				"The voltmeter reads ", tv, " volts, which means you just have one more thing to do to pop this lock. Return to ", max, " volts, as you set in phase 1.";
+				"The voltmeter reads ", tv, " volts, which means you just have one more thing to do to pop this lock. Return to ", max, " volts, as you had set in phase 1.";
 			} else {
 				print "The voltmeter adjusts and now reads ";
 				if (tv > 0) print "+";
@@ -1975,6 +1978,7 @@ with
 				deadflag = 8;
 			} else if (tv == max) {
 				voltmeter.bypassed = true;
+				"The voltage springs back to its initialization value and the tiny quiver of the voltmeter needle tell you you've been successful. ~Alright Snowdrift, that takes care of the lock. Let's get inside,~ you say. Snowdrift gives you a quick salute in acknowledgement.";
 			} else {
 				print "The voltmeter adjusts and now reads ";
 				if (tv > 0) print "+";
@@ -2074,7 +2078,7 @@ with
 		4,
 has concealed;
 
-#include "sf_grammar.h";
+Include "sf_grammar.h";
 
 [Initialise;
 	ship_directions_enabled = true;
